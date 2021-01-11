@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(oil_filler_pose)
+project(oil_pose_detect)
 
 set(CMAKE_CXX_FLAGS "-O3 -fopenmp -fPIC -Wno-deprecated -Wenum-compare -Wno-ignored-attributes -std=c++14")
 
