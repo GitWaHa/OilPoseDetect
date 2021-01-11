@@ -1,0 +1,20 @@
+<launch>
+
+    <!-- start the robot -->
+    <include file="$(find mantra_application)/launch/mantra_bringup.launch" >
+        <arg name="fake" value="false" />
+        <arg name="rviz" value="false" />
+        <arg name="hmi" value="true" />
+    </include>
+
+    <include file="$(find mantra_application)/calibration/launch/publish_static_tf.launch" />
+
+    <!-- detect oil filler pose -->
+    <include file="$(find oil_filler_pose)/launch/oil_filler_detect.launch" >
+        <arg name="rviz" value="false" />
+    </include>
+
+    <!-- start the rviz -->
+    <node name="$(anon rviz)" pkg="rviz" type="rviz" respawn="false" args="-d $(find oil_filler_pose)/launch/abutment.rviz" output="screen" />
+
+</launch>
