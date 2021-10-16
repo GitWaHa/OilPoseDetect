@@ -1,7 +1,7 @@
 #include <utility>
 
-#include "oil_pose_detect.h"
-#include "tuyang_receiver.h"
+#include "oil_detect/oil_detect_once.h"
+#include "camera/tuyang_receiver.h"
 
 #include <pcl/segmentation/sac_segmentation.h>
 // #include <pcl/sample_consensus/method_types.h>

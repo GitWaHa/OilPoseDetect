@@ -1,0 +1,5 @@
+int32 flag
+
+---
+float64[] trans
+float64[] quat

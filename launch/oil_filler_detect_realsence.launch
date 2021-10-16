@@ -1,0 +1,24 @@
+<launch>
+    <arg name="rviz" default="false" />
+
+    <!-- start the Realsense -->
+    <!-- <include file="$(find realsense2_camera)/launch/rs_aligned_depth.launch">
+    </include> -->
+
+    <!-- start the rviz -->
+    <node if="$(arg rviz)" name="$(anon rviz)" pkg="rviz" type="rviz" respawn="false" args="-d $(find oil_filler_pose)/launch/oil_filler_detect.rviz" output="screen" />
+
+    <!-- start the oil_filler_pose -->
+    <node name="detect_oil_pose" pkg="oil_pose_detect" type="detect_oil_pose" respawn="false" output="screen">
+        <param name="show" value="true" />
+        <param name="useExact" value="true" />
+        <param name="useCompressed" value="false" />
+
+        <!-- realsense camera -->
+        <param name="camera" value="realsense" />
+        <param name="oil_frame_reference" value="camera_color_optical_frame" />
+        <param name="topicColor" value="/camera/color/image_raw" />
+        <param name="topicDepth" value="/camera/depth/image_rect_raw" />
+    </node>
+
+</launch>

@@ -1,11 +1,27 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(oil_pose_detect)
 
-set(CMAKE_CXX_FLAGS "-O3 -fopenmp -fPIC -Wno-deprecated -Wenum-compare -Wno-ignored-attributes -std=c++14")
+set(CMAKE_CXX_STANDARD 14)
+# set(CMAKE_CXX_FLAGS "-O3 -fopenmp -fPIC -Wno-deprecated -Wenum-compare -Wno-ignored-attributes -std=c++14")
 
 # Find catkin macros and libraries
-find_package(catkin REQUIRED COMPONENTS cmake_modules tf tf_conversions eigen_conversions message_generation roscpp rospy sensor_msgs
-        std_msgs message_filters cv_bridge image_transport compressed_image_transport compressed_depth_image_transport)
+find_package(catkin REQUIRED COMPONENTS cmake_modules 
+tf 
+tf_conversions 
+eigen_conversions 
+message_generation 
+roscpp 
+rospy 
+sensor_msgs
+std_msgs 
+message_filters 
+cv_bridge 
+image_transport 
+compressed_image_transport 
+compressed_depth_image_transport
+moveit_core
+moveit_ros_planning
+moveit_ros_planning_interface)
 
 # Opencv
 find_package(OpenCV REQUIRED)
@@ -21,11 +37,31 @@ if(OPENMP_FOUND)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 endif()
 
-# PCL
+# PCL 
 find_package(PCL REQUIRED)
 include_directories(${PCL_INCLUDE_DIRS})
 link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})
+
+
+find_package(CUDA REQUIRED)
+
+if(${CUDA_FOUND})
+# add_definitions(-DGPU_CUDA)
+# SET(CUDA_NVCC_FLAGS -Xcompiler -std=c++11 -Xcompiler -fPIC)
+  message("CUDA_FOUND")
+endif(${CUDA_FOUND})
+
+
+add_service_files(
+  FILES
+  DetectOilWithReconstruct.srv
+)
+
+generate_messages(
+  DEPENDENCIES
+  std_msgs
+) 
 
 ###################################
 ## catkin specific configuration ##
@@ -63,10 +99,38 @@ include_directories(include ${catkin_INCLUDE_DIRS} ${PCL_INCLUDE_DIRS})
 #         ${catkin_LIBRARIES})
 
 add_executable (detect_oil_pose src/detect_oil_pose.cpp
-        src/oil_pose_detect.cpp)
+        src/oil_detect/oil_detect_once.cpp)
 target_link_libraries (detect_oil_pose
-        ${PCL_LIBRARIES}
-        ${OpenCV_LIBRARIES}
-        ${catkin_LIBRARIES}
-        ${image_transport_LIBRARIES}
-        ${cv_bridge_LIBRARIES})
+${PCL_LIBRARIES}
+${OpenCV_LIBRARIES}
+${catkin_LIBRARIES}
+${image_transport_LIBRARIES}
+${cv_bridge_LIBRARIES})
+
+add_executable (split_plane src/split_plane.cpp)
+target_link_libraries (split_plane
+${PCL_LIBRARIES}
+${catkin_LIBRARIES})
+
+# 
+add_library(tsdf_fusion src/tsdf_fusion/tsdf_fusion.cpp)
+
+cuda_add_library(tsdf_cuda STATIC
+  src/tsdf_fusion/tsdf_cuda.cu
+)
+
+add_executable (detect_oil_with_reconstruct src/detect_oil_with_reconstruct.cpp
+src/oil_detect/oil_detect_tsdf.cpp
+src/oil_detect/oil_accurate_detect.cpp
+src/oil_detect/oil_rough_detect.cpp)
+# add_dependencies(detect_oil_with_reconstruct tsdf_fusion)
+target_link_libraries (detect_oil_with_reconstruct
+tsdf_fusion
+tsdf_cuda
+${PCL_LIBRARIES}
+${OpenCV_LIBRARIES}
+${catkin_LIBRARIES}
+${image_transport_LIBRARIES}
+${cv_bridge_LIBRARIES})
+
+
