@@ -56,7 +56,8 @@ public:
 
     void runShow(int loop_rate); // 姿态检测加显示
 
-    void imageViewer();
+    void imageViewer(int loop_rate);
+    void cloudViewer(int loop_rate);
 
     void keyboardEvent(const pcl::visualization::KeyboardEvent &event, void *viewer_void);
 
@@ -101,8 +102,6 @@ private:
     std::ostringstream oss;
     pcl::PCDWriter writer;
     std::vector<int> params;
-
-    std::thread imageViewerThread;
 
     std::shared_ptr<CameraReceiver> receiver;
 

@@ -11,7 +11,7 @@ public:
     TsdfFusion();
     ~TsdfFusion();
 
-    void Fusion(std::string img_folder, int num, std::string save_ply_path);
+    void Fusion(std::string img_folder, int num, const float *target_pos, std::string save_ply_path);
 
 private:
     /* data */

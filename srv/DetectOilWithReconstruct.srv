@@ -1,5 +1,6 @@
 int32 flag
 
 ---
+bool is_valid
 float64[] trans
 float64[] quat

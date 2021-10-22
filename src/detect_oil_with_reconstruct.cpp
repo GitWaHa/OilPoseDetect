@@ -2,6 +2,7 @@
 
 #include "oil_detect/oil_detect_tsdf.h"
 #include "camera/tuyang_receiver.h"
+#include "tsdf_fusion/topics_capture.h"
 
 #include <oil_pose_detect/DetectOilWithReconstruct.h>
 #include <oil_pose_detect/DetectOilWithReconstructRequest.h>
@@ -15,50 +16,19 @@ class DetectOilWithReconstructServer
 
 public:
     DetectOilWithReconstructServer() = delete;
-    DetectOilWithReconstructServer(std::string service_name, ros::NodeHandle &nh, std::shared_ptr<CameraReceiver> img_receiver);
-    ~DetectOilWithReconstructServer();
+    DetectOilWithReconstructServer(std::string service_name, ros::NodeHandle &nh);
+    ~DetectOilWithReconstructServer(){};
 
     bool serverCallBack(oil_pose_detect::DetectOilWithReconstruct::Request &req, oil_pose_detect::DetectOilWithReconstruct::Response &res);
 
 private:
+    void init();
     /* data */
-    oilDetectTsdf oil_detecter;
+    std::unique_ptr<OilDetectTsdf> oil_detecter;
 
     ros::NodeHandle nh_;
     ros::ServiceServer server_;
 };
-
-DetectOilWithReconstructServer::DetectOilWithReconstructServer(std::string service_name, ros::NodeHandle &nh, std::shared_ptr<CameraReceiver> img_receiver)
-    : nh_(nh), oil_detecter(img_receiver)
-{
-    oil_detecter.setArmNames({"tuyang_rebuild_1", "tuyang_rebuild_2", "tuyang_rebuild_3"});
-    server_ = nh_.advertiseService(service_name, &DetectOilWithReconstructServer::serverCallBack, this);
-}
-
-DetectOilWithReconstructServer::~DetectOilWithReconstructServer()
-{
-}
-
-bool DetectOilWithReconstructServer::serverCallBack(oil_pose_detect::DetectOilWithReconstruct::Request &req, oil_pose_detect::DetectOilWithReconstruct::Response &res)
-{
-    std::cout << "[DetectOilWithReconstructServer] server start ..." << std::endl
-              << std::endl;
-    oil_detecter.run(15, req.flag);
-
-    res.trans.push_back(oil_detecter.getOilTrans()[0]);
-    res.trans.push_back(oil_detecter.getOilTrans()[1]);
-    res.trans.push_back(oil_detecter.getOilTrans()[2]);
-
-    res.quat.push_back(oil_detecter.getOilQuat()[0]);
-    res.quat.push_back(oil_detecter.getOilQuat()[1]);
-    res.quat.push_back(oil_detecter.getOilQuat()[2]);
-    res.quat.push_back(oil_detecter.getOilQuat()[3]);
-
-    std::cout << std::endl
-              << "[DetectOilWithReconstructServer] server end" << std::endl;
-
-    return true;
-}
 
 int main(int argc, char **argv)
 {
@@ -68,6 +38,54 @@ int main(int argc, char **argv)
     ros::AsyncSpinner spinner(4);
     spinner.start();
 
+    DetectOilWithReconstructServer server("oil_detect_with_reconstruct", node);
+
+    ros::waitForShutdown();
+    return 0;
+}
+
+DetectOilWithReconstructServer::DetectOilWithReconstructServer(std::string service_name, ros::NodeHandle &nh)
+    : nh_(nh)
+{
+    // 初始化相关变量
+    init();
+
+    // 发布服务
+    server_ = nh_.advertiseService(service_name, &DetectOilWithReconstructServer::serverCallBack, this);
+
+    ROS_INFO("server is start....");
+}
+
+bool DetectOilWithReconstructServer::serverCallBack(oil_pose_detect::DetectOilWithReconstruct::Request &req,
+                                                    oil_pose_detect::DetectOilWithReconstruct::Response &res)
+{
+    std::cout << "[DetectOilWithReconstructServer] server start ..." << std::endl
+              << std::endl;
+    int flag = oil_detecter->run();
+
+    res.is_valid = flag == 0 ? true : false;
+
+    if (res.is_valid)
+    {
+        res.is_valid = true;
+        res.trans.push_back(oil_detecter->getOilTrans()[0]);
+        res.trans.push_back(oil_detecter->getOilTrans()[1]);
+        res.trans.push_back(oil_detecter->getOilTrans()[2]);
+
+        res.quat.push_back(oil_detecter->getOilQuat()[0]);
+        res.quat.push_back(oil_detecter->getOilQuat()[1]);
+        res.quat.push_back(oil_detecter->getOilQuat()[2]);
+        res.quat.push_back(oil_detecter->getOilQuat()[3]);
+    }
+
+    std::cout << std::endl
+              << "[DetectOilWithReconstructServer] server end" << std::endl;
+
+    return true;
+}
+
+void DetectOilWithReconstructServer::init()
+{
     // 参数解析
     bool show;
     std::string camera;
@@ -77,25 +95,25 @@ int main(int argc, char **argv)
     bool useExact = false;
     bool useCompressed = false;
 
-    node.param("show", show, true);
-    node.param("camera", camera, std::string("realsense"));
-    node.param("oil_frame_reference", oil_frame_reference, std::string("camera_color_optical_frame"));
-    node.param("topicColor", topicColor, std::string("/camera/color/image_raw"));
-    node.param("topicDepth", topicDepth, std::string("/camera/depth/image_raw"));
-    node.param("useExact", useExact, false);
-    node.param("useCompressed", useCompressed, false);
-
-    int loop_rate = 15; // 与采集频率接近即可
+    nh_.param("show", show, true);
+    nh_.param("camera", camera, std::string("realsense"));
+    nh_.param("oil_frame_reference", oil_frame_reference, std::string("camera_color_optical_frame"));
+    nh_.param("topicColor", topicColor, std::string("/camera/color/image_raw"));
+    nh_.param("topicDepth", topicDepth, std::string("/camera/depth/image_raw"));
+    nh_.param("useExact", useExact, false);
+    nh_.param("useCompressed", useCompressed, false);
 
     /// Realsense cloud and image receiver
     std::shared_ptr<CameraReceiver> camera_receiver;
     if (camera == "tuyang")
-        camera_receiver = std::make_shared<TuYangCameraReceiver>(node, topicColor, topicDepth, useExact, useCompressed, loop_rate);
+        camera_receiver = std::make_shared<TuYangCameraReceiver>(nh_, topicColor, topicDepth, useExact, useCompressed, 30);
     else
-        camera_receiver = std::make_shared<CameraReceiver>(node, topicColor, topicDepth, useExact, useCompressed, loop_rate);
+        camera_receiver = std::make_shared<CameraReceiver>(nh_, topicColor, topicDepth, useExact, useCompressed, 30);
 
-    DetectOilWithReconstructServer server("oil_detect_with_reconstruct", node, camera_receiver);
+    // tsdf相关话题的捕获，保存到某个文件夹下，方便tsdf调用
+    auto topic_receiver = std::make_shared<TopicsCapture>(topicDepth, "/camera/pose", "/home/waha/Desktop/test_data/");
+    oil_detecter = std::make_unique<OilDetectTsdf>(camera_receiver, topic_receiver);
 
-    ros::waitForShutdown();
-    return 0;
-}
+    if (show)
+        oil_detecter->show(15);
+};

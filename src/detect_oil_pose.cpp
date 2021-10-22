@@ -1,6 +1,6 @@
 #include <utility>
 
-#include "oil_detect/oil_detect_once.h"
+#include "oil_detect/oil_detect.h"
 #include "camera/tuyang_receiver.h"
 
 #include <pcl/segmentation/sac_segmentation.h>
@@ -57,6 +57,6 @@ int main(int argc, char **argv)
         of_pose.runShow(loop_rate);
     }
 
-    ros::shutdown();
+    ros::waitForShutdown();
     return 0;
 }

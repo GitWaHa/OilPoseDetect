@@ -5,7 +5,7 @@
 
 #include <fstream>
 
-#include "oil_detect/oil_detect_once.h"
+#include "oil_detect/oil_detect.h"
 #include <pcl/segmentation/sac_segmentation.h>
 // #include <pcl/sample_consensus/method_types.h>
 // #include <pcl/sample_consensus/model_types.h>
@@ -56,7 +56,7 @@ OilFillerPose::OilFillerPose(ros::NodeHandle &node, std::shared_ptr<CameraReceiv
     cloud_of = pcl::PointCloud<pcl::PointXYZ>::Ptr(new pcl::PointCloud<pcl::PointXYZ>());
 }
 
-void OilFillerPose::imageViewer()
+void OilFillerPose::imageViewer(int loop_rate)
 {
     std::chrono::time_point<std::chrono::high_resolution_clock> start, now;
     double fps = 0;
@@ -73,7 +73,7 @@ void OilFillerPose::imageViewer()
 
     start = std::chrono::high_resolution_clock::now();
 
-    ros::Rate rate(rate_);
+    ros::Rate rate(loop_rate);
     for (; running && ros::ok();)
     {
         ++frameCount;
@@ -116,6 +116,70 @@ void OilFillerPose::imageViewer()
     }
     cv::destroyAllWindows();
     cv::waitKey(100);
+
+    receiver->stop();
+}
+
+void OilFillerPose::cloudViewer(int loop_rate)
+{
+    // PCLVisualizer初始化
+    pcl::visualization::PCLVisualizer::Ptr visualizer(new pcl::visualization::PCLVisualizer("Cloud Viewer"));
+    const std::string cloudName = "rendered";
+    visualizer->addPointCloud(cloud, cloudName);
+    visualizer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, cloudName);
+    visualizer->initCameraParameters();
+    visualizer->setBackgroundColor(0, 0, 0);
+    visualizer->setShowFPS(true);
+    visualizer->setCameraPosition(0, 0, 0, 0, -1, 0);
+    visualizer->registerKeyboardCallback(&OilFillerPose::keyboardEvent, *this, (void *)visualizer.get());
+
+    ros::Rate rate(loop_rate); // 与采集频率接近即可
+    int count = 0;
+    auto start = std::chrono::high_resolution_clock::now();
+    while (ros::ok() && running && !visualizer->wasStopped())
+    {
+        count++;
+        auto now = std::chrono::high_resolution_clock::now();
+        double elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - start).count() / 1000.0;
+        if (elapsed >= 1)
+        {
+            // std::cout << "#################################################" << std::endl;
+            frame_rate_ = count;
+            // std::cout << "frame_rate_ " << frame_rate_ << std::endl;
+            // std::cout << "#################################################" << std::endl;
+            count = 0;
+            start = now;
+        }
+
+        visualizer->removeAllShapes();
+
+        pcl::copyPointCloud(*receiver->getCloud(), *cloud); // copy原始点云
+
+        if (ofDetect() && ofPlaneCal())
+        {                           // 检测到加油口, 平面拟合成功
+            ofCenterCal();          // 加油口中心坐标计算
+            ofPoseCal();            // 加油口姿态解算
+            ofPoseShow(visualizer); // 显示加油口姿态
+            publishTF();            // 发布加油口姿态
+        }
+
+        // 更新点云显示
+        visualizer->updatePointCloud(cloud, cloudName);
+
+        if (save)
+        { // 保存点云及结果
+            saveCloudAndImages();
+            save = false;
+        }
+
+        visualizer->spinOnce(10);
+
+        ros::spinOnce();
+        rate.sleep();
+    }
+
+    printf("[INFO] Exit oil filter detector...\n");
+    visualizer->close();
 }
 
 void OilFillerPose::getCameraPose(std::string source_frame, std::string target_frame, tf::StampedTransform &transform, std::string save_path = "")
@@ -634,66 +698,13 @@ void OilFillerPose::runShow(int loop_rate)
 {
     running = true;
     // 启动图像显示线程
-    imageViewerThread = std::thread(&OilFillerPose::imageViewer, this);
+    auto imageViewerThread = std::thread(&OilFillerPose::imageViewer, this, loop_rate);
     imageViewerThread.detach(); // 将子线程从主线程里分离
 
-    // PCLVisualizer初始化
-    pcl::visualization::PCLVisualizer::Ptr visualizer(new pcl::visualization::PCLVisualizer("Cloud Viewer"));
-    const std::string cloudName = "rendered";
-    visualizer->addPointCloud(cloud, cloudName);
-    visualizer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, cloudName);
-    visualizer->initCameraParameters();
-    visualizer->setBackgroundColor(0, 0, 0);
-    visualizer->setShowFPS(true);
-    visualizer->setCameraPosition(0, 0, 0, 0, -1, 0);
-    visualizer->registerKeyboardCallback(&OilFillerPose::keyboardEvent, *this, (void *)visualizer.get());
+    // 启动图像显示线程
+    auto cloudViewerThread = std::thread(&OilFillerPose::cloudViewer, this, loop_rate);
+    cloudViewerThread.detach(); // 将子线程从主线程里分离
 
-    ros::Rate rate(loop_rate); // 与采集频率接近即可
-    int count = 0;
-    auto start = std::chrono::high_resolution_clock::now();
-    while (ros::ok() && running && !visualizer->wasStopped())
-    {
-        count++;
-        auto now = std::chrono::high_resolution_clock::now();
-        double elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - start).count() / 1000.0;
-        if (elapsed >= 1)
-        {
-            std::cout << "#################################################" << std::endl;
-            frame_rate_ = count;
-            std::cout << "frame_rate_ " << frame_rate_ << std::endl;
-            std::cout << "#################################################" << std::endl;
-            count = 0;
-            start = now;
-        }
-
-        visualizer->removeAllShapes();
-
-        pcl::copyPointCloud(*receiver->getCloud(), *cloud); // copy原始点云
-
-        if (ofDetect() && ofPlaneCal())
-        {                           // 检测到加油口, 平面拟合成功
-            ofCenterCal();          // 加油口中心坐标计算
-            ofPoseCal();            // 加油口姿态解算
-            ofPoseShow(visualizer); // 显示加油口姿态
-            publishTF();            // 发布加油口姿态
-        }
-
-        // 更新点云显示
-        visualizer->updatePointCloud(cloud, cloudName);
-
-        if (save)
-        { // 保存点云及结果
-            saveCloudAndImages();
-            save = false;
-        }
-
-        visualizer->spinOnce(10);
-
-        ros::spinOnce();
-        rate.sleep();
-    }
-
-    printf("[INFO] Exit oil filter detector...\n");
-    visualizer->close();
-    receiver->stop();
+    cout << "[info]"
+         << "show thread is started" << endl;
 }

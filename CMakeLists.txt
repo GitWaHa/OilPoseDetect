@@ -13,6 +13,7 @@ message_generation
 roscpp 
 rospy 
 sensor_msgs
+geometry_msgs
 std_msgs 
 message_filters 
 cv_bridge 
@@ -99,7 +100,8 @@ include_directories(include ${catkin_INCLUDE_DIRS} ${PCL_INCLUDE_DIRS})
 #         ${catkin_LIBRARIES})
 
 add_executable (detect_oil_pose src/detect_oil_pose.cpp
-        src/oil_detect/oil_detect_once.cpp)
+  src/oil_detect/oil_detect.cpp
+)
 target_link_libraries (detect_oil_pose
 ${PCL_LIBRARIES}
 ${OpenCV_LIBRARIES}
@@ -120,17 +122,20 @@ cuda_add_library(tsdf_cuda STATIC
 )
 
 add_executable (detect_oil_with_reconstruct src/detect_oil_with_reconstruct.cpp
-src/oil_detect/oil_detect_tsdf.cpp
-src/oil_detect/oil_accurate_detect.cpp
-src/oil_detect/oil_rough_detect.cpp)
+  src/oil_detect/oil_detect_tsdf.cpp
+  src/oil_detect/oil_accurate_detect.cpp
+  src/oil_detect/oil_rough_detect.cpp
+  src/tsdf_fusion/topics_capture.cpp
+)
 # add_dependencies(detect_oil_with_reconstruct tsdf_fusion)
 target_link_libraries (detect_oil_with_reconstruct
-tsdf_fusion
-tsdf_cuda
-${PCL_LIBRARIES}
-${OpenCV_LIBRARIES}
-${catkin_LIBRARIES}
-${image_transport_LIBRARIES}
-${cv_bridge_LIBRARIES})
+  tsdf_fusion
+  tsdf_cuda
+  ${PCL_LIBRARIES}
+  ${OpenCV_LIBRARIES}
+  ${catkin_LIBRARIES}
+  ${image_transport_LIBRARIES}
+  ${cv_bridge_LIBRARIES}
+)
 
 

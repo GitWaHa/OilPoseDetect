@@ -10,21 +10,15 @@
 #include "oil_detect/oil_rough_detect.h"
 #include "oil_detect/oil_accurate_detect.h"
 #include "tsdf_fusion/tsdf_fusion.h"
+#include "tsdf_fusion/topics_capture.h"
 
-#include <tf/transform_broadcaster.h>
-
-class oilDetectTsdf
+class OilDetectTsdf
 {
 public:
-    oilDetectTsdf(std::shared_ptr<CameraReceiver> img_receiver);
-    ~oilDetectTsdf();
+    OilDetectTsdf(std::shared_ptr<CameraReceiver> img_receiver, std::shared_ptr<TopicsCapture> topic_capture);
+    ~OilDetectTsdf();
 
-    void run(int loop_rate, int flag);
-
-    void setArmNames(std::vector<std::string> names)
-    {
-        multi_arm_name_ = std::move(names);
-    }
+    int run();
 
     const float *getOilTrans()
     {
@@ -36,22 +30,28 @@ public:
         return oil_quat_;
     }
 
+    void imageViewer(int loop_rate);
+    void cloudViewer(int loop_rate);
+
+    void show(int loop_rate);
+
 private:
-    int multiViewDataCollect(std::string output_folder);
-    void publishTF();
+    int multiViewDataCollect(float *oil_position, std::string output_folder);
 
 private:
     /* data */
     std::shared_ptr<CameraReceiver> img_receiver_;
+    std::shared_ptr<TopicsCapture> topic_capture_;
+
     OilRoughDetect oil_rough_detecter_;
     OilAccurateDetect oil_accurate_detecter_;
     TsdfFusion tsdf_fusion_;
 
-    std::vector<std::string> multi_arm_name_;
+    float init_target_x_;
+    float init_target_y_;
+    float init_target_z_;
+    std::vector<geometry_msgs::Pose> init_waypoints_;
 
     const float *oil_pos_;
     const float *oil_quat_;
-    bool oil_pose_valid_;
-
-    tf::TransformBroadcaster broadcaster_;
 };
