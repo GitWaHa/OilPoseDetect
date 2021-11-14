@@ -38,7 +38,7 @@ int main(int argc, char **argv)
     ros::AsyncSpinner spinner(4);
     spinner.start();
 
-    DetectOilWithReconstructServer server("oil_detect_with_reconstruct", node);
+    DetectOilWithReconstructServer server("get_pose", node);
 
     ros::waitForShutdown();
     return 0;
@@ -111,8 +111,9 @@ void DetectOilWithReconstructServer::init()
         camera_receiver = std::make_shared<CameraReceiver>(nh_, topicColor, topicDepth, useExact, useCompressed, 30);
 
     // tsdf相关话题的捕获，保存到某个文件夹下，方便tsdf调用
-    auto topic_receiver = std::make_shared<TopicsCapture>(topicDepth, "/camera/pose", "/home/waha/Desktop/test_data/");
-    oil_detecter = std::make_unique<OilDetectTsdf>(camera_receiver, topic_receiver);
+    std::string data_folder = "/home/waha/Desktop/test_data";
+    auto topic_receiver = std::make_shared<TopicsCapture>(topicDepth, "/camera/pose", data_folder + "/reconstruct_data");
+    oil_detecter = std::make_unique<OilDetectTsdf>(camera_receiver, topic_receiver, data_folder);
 
     if (show)
         oil_detecter->show(15);

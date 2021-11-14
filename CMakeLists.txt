@@ -138,4 +138,15 @@ target_link_libraries (detect_oil_with_reconstruct
   ${cv_bridge_LIBRARIES}
 )
 
+add_executable (tsdf_test src/tsdf_test.cpp
+)
+target_link_libraries (tsdf_test
+  tsdf_fusion
+  tsdf_cuda
+  ${PCL_LIBRARIES}
+  ${OpenCV_LIBRARIES}
+  ${catkin_LIBRARIES}
+  ${image_transport_LIBRARIES}
+  ${cv_bridge_LIBRARIES}
+)
 

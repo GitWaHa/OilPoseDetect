@@ -29,21 +29,34 @@ public:
 
     void saveDataFrame(const std::string save_folder, const std::string save_num);
 
-    float *getPosition()
+    float *getPositionInCamera()
     {
-        return oil_pos_;
+        return oil_pos_in_camera_;
+    }
+
+    float *getPositionInWorld()
+    {
+        return oil_pos_in_world_;
     }
 
 private:
     int roiDetect();
     int getPosFromRoi();
-    void getCameraPose(std::string source_frame, std::string target_frame, tf::StampedTransform &transform, std::string save_path = "");
 
+    void computerMeanValue(PCLPointCloud::Ptr cloud, std::vector<int> indices, float *pos);
     void computerMeanValue(PCLPointCloud::Ptr cloud, float *pos);
+
+    void getCameraPose(std::string source_frame, std::string target_frame);
+    void saveCameraPose(std::string save_path);
+
+    void convertPosToWorld(float *oil_pos_in_camera, float *oil_pos_in_world);
 
 private:
     /* data */
-    float oil_pos_[3];
+    float oil_pos_in_camera_[3];
+    float oil_pos_in_world_[3];
+
+    tf::StampedTransform camera_pose_;
 
     cv::Mat color_;
     cv::Mat color_draw_;

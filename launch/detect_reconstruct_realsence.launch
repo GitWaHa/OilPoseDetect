@@ -2,8 +2,8 @@
     <arg name="rviz" default="false" />
 
     <node name="camera_pose_publish" pkg="oil_pose_detect" type="camera_pose_publisher.py" respawn="false" output="screen">
-        <param name="base_frame" value="world" />
-        <param name="camera_frame" value="panda_grasp_frame" />
+        <param name="base_frame" value="base_link" />
+        <param name="camera_frame" value="camera_color_optical_frame" />
     </node>
 
     <!-- start the oil_filler_pose -->

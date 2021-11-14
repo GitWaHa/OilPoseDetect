@@ -8,6 +8,8 @@
 #include <pcl/keypoints/uniform_sampling.h>
 
 #include <tf/transform_listener.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
+#include <tf2/transform_datatypes.h>
 
 OilRoughDetect::OilRoughDetect() : cloud_(new PCLPointCloudRGB)
 {
@@ -20,41 +22,63 @@ OilRoughDetect::~OilRoughDetect()
 int OilRoughDetect::detect_once(const cv::Mat &color, const cv::Mat &depth, const PCLPointCloudRGB::Ptr cloud, float *oil_pose)
 {
     color_ = color;
+    color_draw_ = color_.clone();
     depth_ = depth;
     cloud_ = cloud;
 
     if (roiDetect() != 0 || getPosFromRoi() != 0)
         return -1;
 
-    oil_pose[0] = getPosition()[0];
-    oil_pose[1] = getPosition()[1];
-    oil_pose[2] = getPosition()[2];
+    oil_pose[0] = getPositionInWorld()[0];
+    oil_pose[1] = getPositionInWorld()[1];
+    oil_pose[2] = getPositionInWorld()[2];
+
+    cout << "[info]"
+         << "getPositionInCamera:" << getPositionInCamera()[0] << "," << getPositionInCamera()[1] << "," << getPositionInCamera()[2] << endl;
+    cout << "[info]"
+         << "getPositionInWorld:" << getPositionInWorld()[0] << "," << getPositionInWorld()[1] << "," << getPositionInWorld()[2] << endl;
 
     return 0;
 }
 
 void OilRoughDetect::saveDataFrame(const std::string save_folder, const std::string save_num)
 {
-    std::string pos_path = save_folder + "frame_" + save_num + "_pos" + ".pcd";
+    cout << "[info] start save data ....." << endl;
+    std::string pos_path = save_folder + "/frame_" + save_num + "_oil_pos" + ".txt";
     ofstream pose_f(pos_path);
-    pose_f << getPosition()[0] << " " << getPosition()[1] << " " << getPosition()[2];
+    pose_f << "in camera: ";
+    pose_f << getPositionInCamera()[0] << " " << getPositionInCamera()[1] << " " << getPositionInCamera()[2] << endl;
+    pose_f << "in world: ";
+    pose_f << getPositionInWorld()[0] << " " << getPositionInWorld()[1] << " " << getPositionInWorld()[2] << endl;
     pose_f.close();
+    cout << "[info]"
+         << "save pose to " << pos_path << endl;
 
-    std::string cloud_path = save_folder + "frame_" + save_num + "_cloud" + ".pcd";
+    std::string cloud_path = save_folder + "/frame_" + save_num + "_cloud" + ".pcd";
     pcl::io::savePCDFile(cloud_path, *cloud_);
+    cout << "[info]"
+         << "save cloud_ to " << cloud_path << endl;
 
-    std::string color_path = save_folder + "frame_" + save_num + "_color" + ".jpg";
+    std::string color_path = save_folder + "/frame_" + save_num + "_color" + ".jpg";
     cv::imwrite(color_path, color_);
+    cout << "[info]"
+         << "save color_ to " << color_path << endl;
 
-    std::string color_draw_path = save_folder + "frame_" + save_num + "_color_draw" + ".jpg";
+    std::string color_draw_path = save_folder + "/frame_" + save_num + "_color_draw" + ".jpg";
     cv::imwrite(color_draw_path, color_draw_);
+    cout << "[info]"
+         << "save color_draw_ to " << color_draw_path << endl;
 
-    std::string depth_path = save_folder + "frame_" + save_num + "_depth" + ".png";
+    std::string depth_path = save_folder + "/frame_" + save_num + "_depth" + ".png";
     cv::imwrite(depth_path, depth_);
+    cout << "[info]"
+         << "save depth_ to " << depth_path << endl;
 
     tf::StampedTransform transform;
-    std::string camera_pose = save_folder + "frame_" + save_num + "_pose" + ".txt";
-    getCameraPose("camera_rgb_optical_frame", "base_link", transform, camera_pose);
+    std::string camera_pose_path = save_folder + "/frame_" + save_num + "_camerapose" + ".txt";
+    saveCameraPose(camera_pose_path);
+    cout << "[info]"
+         << "save camera_pose to " << camera_pose_path << endl;
 }
 
 int OilRoughDetect::roiDetect()
@@ -123,27 +147,6 @@ int OilRoughDetect::roiDetect()
     return 0;
 }
 
-void OilRoughDetect::getCameraPose(std::string source_frame, std::string target_frame, tf::StampedTransform &transform, std::string save_path)
-{
-    tf::TransformListener listener;
-
-    listener.waitForTransform(target_frame, source_frame, ros::Time(0), ros::Duration(3));
-    listener.lookupTransform(target_frame, source_frame, ros::Time(0), transform);
-
-    tf::Matrix3x3 roat(transform.getRotation());
-
-    if (!save_path.empty())
-    {
-        ofstream OutFile(save_path);
-        OutFile << roat.getRow(0).getX() << " " << roat.getRow(0).getY() << " " << roat.getRow(0).getZ() << " " << transform.getOrigin().getX() << std::endl;
-        OutFile << roat.getRow(1).getX() << " " << roat.getRow(1).getY() << " " << roat.getRow(1).getZ() << " " << transform.getOrigin().getY() << std::endl;
-        OutFile << roat.getRow(2).getX() << " " << roat.getRow(2).getY() << " " << roat.getRow(2).getZ() << " " << transform.getOrigin().getZ() << std::endl;
-        OutFile << 0 << " " << 0 << " " << 0 << " " << 1;
-
-        OutFile.close();
-    }
-}
-
 int OilRoughDetect::getPosFromRoi()
 {
     /// 获取加油口无组织无色彩点云
@@ -172,7 +175,6 @@ int OilRoughDetect::getPosFromRoi()
               << "cloud_tmp size: " << cloud_tmp->points.size() << std::endl;
 
     /// 平面拟合 // 平面方程: ax+by+cz+d = 0
-    std::vector<int> indices(0);
     pcl::SACSegmentation<pcl::PointXYZ> seg;
     pcl::PointIndices::Ptr inliers(new pcl::PointIndices);
     pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients);
@@ -196,34 +198,107 @@ int OilRoughDetect::getPosFromRoi()
 
     pcl::PointCloud<pcl::PointXYZ>::Ptr plane(new pcl::PointCloud<pcl::PointXYZ>);
     pcl::ExtractIndices<pcl::PointXYZ> extract;
+    std::vector<int> indices(0);
     extract.setInputCloud(cloud_tmp);
     extract.setIndices(inliers);
     extract.setNegative(false);
     extract.filter(indices);
+    // FIXME: 造成程序自动退出，只能使用 extract.filter(indices);方式
     // extract.filter(*plane);
 
     // 随机选择点
-    pcl::PointCloud<pcl::PointXYZ>::Ptr ran_plane(new pcl::PointCloud<pcl::PointXYZ>);
-    pcl::UniformSampling<pcl::PointXYZ> filter;
-    filter.setInputCloud(plane);
-    filter.setRadiusSearch(0.005f);
+    // pcl::PointCloud<pcl::PointXYZ>::Ptr ran_plane(new pcl::PointCloud<pcl::PointXYZ>);
+    // pcl::UniformSampling<pcl::PointXYZ> filter;
+    // filter.setInputCloud(plane);
+    // filter.setRadiusSearch(0.005f);
     // filter.filter(*ran_plane);
 
-    computerMeanValue(ran_plane, oil_pos_);
+    // 计算平面内点的均值坐标，相对于像极坐标系
+    computerMeanValue(cloud_tmp, indices, oil_pos_in_camera_);
+    // computerMeanValue(plane, oil_pos_in_camera_);  // FIXME:
+
+    //转换到世界坐标系
+    getCameraPose("camera_color_optical_frame", "base_link");
+    convertPosToWorld(oil_pos_in_camera_, oil_pos_in_world_);
 
     return 0;
+}
+
+void OilRoughDetect::computerMeanValue(PCLPointCloud::Ptr cloud, std::vector<int> indices, float *pos)
+{
+    float XData = 0.0, YData = 0.0, ZData = 0.0;
+    for (auto idx : indices)
+    {
+        auto point = cloud->at(idx);
+        XData += point.x;
+        YData += point.y;
+        ZData += point.z;
+    }
+    int size = indices.size();
+    pos[0] = XData / size;
+    pos[1] = YData / size;
+    pos[2] = ZData / size;
 }
 
 void OilRoughDetect::computerMeanValue(PCLPointCloud::Ptr cloud, float *pos)
 {
     float XData = 0.0, YData = 0.0, ZData = 0.0;
-    for (auto iter = cloud->begin(); iter != cloud->end(); iter++)
+    for (auto start = cloud->begin(); start != cloud->end(); start++)
     {
-        XData += (*iter).x;
-        YData += (*iter).y;
-        ZData += (*iter).z;
+        XData += (*start).x;
+        YData += (*start).y;
+        ZData += (*start).z;
     }
-    pos[0] = XData / cloud->size();
-    pos[1] = YData / cloud->size();
-    pos[2] = ZData / cloud->size();
+    int size = cloud->size();
+    pos[0] = XData / size;
+    pos[1] = YData / size;
+    pos[2] = ZData / size;
+}
+
+void OilRoughDetect::saveCameraPose(std::string save_path)
+{
+    tf::Matrix3x3 roat(camera_pose_.getRotation());
+
+    if (!save_path.empty())
+    {
+        ofstream OutFile(save_path);
+        OutFile << roat.getRow(0).getX() << " " << roat.getRow(0).getY() << " " << roat.getRow(0).getZ() << " " << camera_pose_.getOrigin().getX() << std::endl;
+        OutFile << roat.getRow(1).getX() << " " << roat.getRow(1).getY() << " " << roat.getRow(1).getZ() << " " << camera_pose_.getOrigin().getY() << std::endl;
+        OutFile << roat.getRow(2).getX() << " " << roat.getRow(2).getY() << " " << roat.getRow(2).getZ() << " " << camera_pose_.getOrigin().getZ() << std::endl;
+        OutFile << 0 << " " << 0 << " " << 0 << " " << 1;
+
+        OutFile.close();
+    }
+}
+
+void OilRoughDetect::getCameraPose(std::string source_frame, std::string target_frame)
+{
+    tf::TransformListener listener;
+
+    listener.waitForTransform(target_frame, source_frame, ros::Time(0), ros::Duration(3));
+    listener.lookupTransform(target_frame, source_frame, ros::Time(0), camera_pose_);
+}
+
+void OilRoughDetect::convertPosToWorld(float *oil_pos_in_camera, float *oil_pos_in_world)
+{
+    geometry_msgs::Point point1;
+    point1.x = oil_pos_in_camera[0];
+    point1.y = oil_pos_in_camera[1];
+    point1.z = oil_pos_in_camera[2];
+
+    geometry_msgs::Point point2;
+
+    geometry_msgs::TransformStamped transform;
+    transform.transform.translation.x = camera_pose_.getOrigin().getX();
+    transform.transform.translation.y = camera_pose_.getOrigin().getY();
+    transform.transform.translation.z = camera_pose_.getOrigin().getZ();
+    transform.transform.rotation.x = camera_pose_.getRotation().getX();
+    transform.transform.rotation.y = camera_pose_.getRotation().getY();
+    transform.transform.rotation.z = camera_pose_.getRotation().getZ();
+    transform.transform.rotation.w = camera_pose_.getRotation().getW();
+
+    tf2::doTransform(point1, point2, transform);
+    oil_pos_in_world[0] = point2.x;
+    oil_pos_in_world[1] = point2.y;
+    oil_pos_in_world[2] = point2.z;
 }

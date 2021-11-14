@@ -5,6 +5,19 @@
 #include <vector>
 #include <opencv2/opencv.hpp>
 
+void printArray(float *array, int r, int c)
+{
+  for (int i = 0; i < r; i++)
+  {
+    for (int j = 0; j < c; j++)
+    {
+      std::cout << array[i * c + j] << ",";
+    }
+    std::cout << std::endl;
+  }
+  std::cout << std::endl;
+}
+
 void transform_point(const float *trans, const float *tmp_pt, float *out_pt)
 {
   out_pt[0] = trans[0 * 4 + 0] * tmp_pt[0] + trans[0 * 4 + 1] * tmp_pt[1] + trans[0 * 4 + 2] * tmp_pt[2] + trans[0 * 4 + 3];
@@ -94,8 +107,8 @@ void ReadDepth(std::string filename, int H, int W, float *depth)
   for (int r = 0; r < H; ++r)
     for (int c = 0; c < W; ++c)
     {
-      depth[r * W + c] = (float)(depth_mat.at<unsigned short>(r, c)) / 4000.0f;
-      if (depth[r * W + c] > 2.0f) // Only consider depth < 6m
+      depth[r * W + c] = (float)(depth_mat.at<unsigned short>(r, c)) / 1000.0f;
+      if (depth[r * W + c] > 2.0f) // Only consider depth < 2m
         depth[r * W + c] = 0;
     }
 }

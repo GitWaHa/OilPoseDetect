@@ -9,6 +9,7 @@
 #include <message_filters/subscriber.h>
 #include <message_filters/synchronizer.h>
 #include <message_filters/sync_policies/approximate_time.h>
+#include <message_filters/sync_policies/exact_time.h>
 
 class TopicsCapture
 {
@@ -17,6 +18,7 @@ public:
     // using CameraPoseMsg = sensor_msgs::Image;
     using DepthImageMsg = sensor_msgs::Image;
     using SyncPolicy = message_filters::sync_policies::ApproximateTime<CameraPoseMsg, DepthImageMsg>;
+    // using SyncPolicy = message_filters::sync_policies::ExactTime<CameraPoseMsg, DepthImageMsg>;
 
 public:
     TopicsCapture(const std::string depth_img_topic_name, const std::string camera_pose_topic_name, const std::string save_folder);

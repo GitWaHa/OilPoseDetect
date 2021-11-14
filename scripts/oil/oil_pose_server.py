@@ -52,10 +52,7 @@ class OilPoseServer(object):
 
 
 class OilPoseReconstructServer(object):
-    def __init__(
-        self,
-        service_name="/detect_oil_with_reconstruct/oil_detect_with_reconstruct"
-    ):
+    def __init__(self, service_name="/detect_oil_pose/get_pose"):
         super(OilPoseReconstructServer, self).__init__()
 
         self.client_ = rospy.ServiceProxy(service_name,

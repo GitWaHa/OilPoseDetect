@@ -69,12 +69,12 @@ void Integrate(float * cam_K, float * cam2base, float * depth_im,
 // Loads a binary file with depth data and generates a TSDF voxel volume (5m x 5m x 5m at 1cm resolution)
 // Volume is aligned with respect to the camera coordinates of the first frame (a.k.a. base frame)
 extern "C" void TSDF_Fusion(const char * data_folder, int frame_nums, const float*target_pos, const char *save_path) {
-    std::string ply_save_path = save_path;
+    std::string ply_save_path = save_path;  // 重建的ply文件保存位置
     std::string data_path = data_folder;
-    // Location of camera intrinsic file
-    // std::string cam_K_file = data_path + "/camera-intrinsics_tuyang_rgb.txt";
-    std::string cam_K_file = data_path + "/camera-intrinsics.txt";
-    std::string adjust_hand_eye_file = data_path + "/adjust_hand_eye.txt";
+    std::string reconstruct_data_folder = data_path + "/reconstruct_data";  // 重建需要的数据(相机位姿、深度图)
+    std::string base2world_file = data_path + "/rough_detecter" +"/frame_0_camerapose.txt";
+    std::string cam_K_file = data_path + "/camera-intrinsics.txt";  // 相机内参
+    std::string adjust_hand_eye_file = data_path + "/adjust_hand_eye.txt";  // 相机内参
 
     // Location of folder containing RGB-D frames and camera pose files
     int base_frame_idx = 0;
@@ -91,20 +91,25 @@ extern "C" void TSDF_Fusion(const char * data_folder, int frame_nums, const floa
     int im_height = 480;
     float depth_im[im_height * im_width];
     //[-0.145, 0.414, 1.162]
-    float world_voxel_grid_origin_x = -0.145f; // Location of voxel grid origin in base frame camera coordinates
-    float world_voxel_grid_origin_y = 0.414;
-    float world_voxel_grid_origin_z = 1.15;
 
     // Voxel grid parameters (change these to change voxel grid resolution, etc.)
-    float voxel_grid_origin_x = -0.5f; // Location of voxel grid origin in base frame camera coordinates
-    float voxel_grid_origin_y = -0.5f;
-    float voxel_grid_origin_z = 0.3f;
-    float voxel_size = 0.1f;
-    // float voxel_size = 0.0005f;
-    float trunc_margin = voxel_size * 5;
-    int voxel_grid_dim_x = 500;
-    int voxel_grid_dim_y = 500;
-    int voxel_grid_dim_z = 500;
+    // 加油口初始位置（相机坐标系），此坐标由world_voxel_grid_origin变换计算得到
+    float voxel_grid_origin_x = 0.f; 
+    float voxel_grid_origin_y = 0.f;
+    float voxel_grid_origin_z = 0.f;
+    // 单个网格边长
+    float voxel_size = 0.0005f;
+    // 截断距离
+    float trunc_margin = voxel_size * 10;
+    // 网格数量，总数=voxel_grid_dim_x*voxel_grid_dim_y*voxel_grid_dim_z
+    int voxel_grid_dim_x = 300;
+    int voxel_grid_dim_y = 300;
+    int voxel_grid_dim_z = 300;
+
+    // TODO: 加油口初始位置（世界坐标系）
+    float world_voxel_grid_origin_x = target_pos[0];
+    float world_voxel_grid_origin_y = target_pos[1];
+    float world_voxel_grid_origin_z = target_pos[2];
 
     // Read camera intrinsics
     std::cout << "Read camera intrinsics\n";
@@ -115,24 +120,31 @@ extern "C" void TSDF_Fusion(const char * data_folder, int frame_nums, const floa
     std::cout << "Read base frame camera pose\n";
     std::ostringstream base_frame_prefix;
     base_frame_prefix << std::setw(2) << std::setfill('0') << base_frame_idx;
-    std::string base2world_file = data_path + "/frame_" + base_frame_prefix.str() + "_pose.txt";
     std::vector<float> tmp2world_vec = LoadMatrixFromFile(base2world_file, 4, 4);
     std::copy(tmp2world_vec.begin(), tmp2world_vec.end(), tmp2world);
     std::vector<float> cam2tmp_vec = LoadMatrixFromFile(adjust_hand_eye_file, 4, 4);
     std::copy(cam2tmp_vec.begin(), cam2tmp_vec.end(), cam2tmp);
     multiply_matrix(tmp2world, cam2tmp, base2world);
+    printArray(tmp2world, 4, 4);
+    printArray(cam2tmp, 4, 4);
+    printArray(base2world, 4, 4);
 
     // Invert base frame camera pose to get world-to-base frame transform 
     float base2world_inv[16] = {0};
     invert_matrix(base2world, base2world_inv);
 
+    // 目标位置变换（世界坐标系 -> 相机坐标系)
     float in_pt[3] = {world_voxel_grid_origin_x, world_voxel_grid_origin_y, world_voxel_grid_origin_z};
     float out_pt[3] = {0};
     transform_point(base2world_inv, in_pt, out_pt);
     voxel_grid_origin_x = out_pt[0] - voxel_grid_dim_x*voxel_size/2;
     voxel_grid_origin_y = out_pt[1] - voxel_grid_dim_y*voxel_size/2;
     voxel_grid_origin_z = out_pt[2] - voxel_grid_dim_z*voxel_size/2;
-    std::cout <<"voxel_grid_origin: ";
+    std::cout <<"world_voxel_grid_origin_x: " <<std::endl;
+    printArray(in_pt, 1, 3);
+    std::cout <<"voxel_grid_origin: " <<std::endl;
+    printArray(out_pt, 1, 3);
+    std::cout <<"voxel_grid_origin(move to origin): " <<std::endl;
     std::cout <<voxel_grid_origin_x <<","<<voxel_grid_origin_y <<","<<voxel_grid_origin_z <<"\n";
 
     // Initialize voxel grid
@@ -167,19 +179,13 @@ extern "C" void TSDF_Fusion(const char * data_folder, int frame_nums, const floa
         std::ostringstream curr_frame_prefix;
         curr_frame_prefix << std::setw(2) << std::setfill('0') << frame_idx;
 
-        // // Read current frame depth
-        std::string depth_im_file = data_path + "/frame_" + curr_frame_prefix.str() + "_depth.png";
+        // Read current frame depth
+        std::string depth_im_file = reconstruct_data_folder + "/frame_" + curr_frame_prefix.str() + "_depth.png";
         std::cout << "Read current frame dept: " << depth_im_file << std::endl;
         ReadDepth(depth_im_file, im_height, im_width, depth_im);
 
         // Read base frame camera pose
-        // std::string cam2world_file = data_path + "/frame_" + curr_frame_prefix.str() + "_pose.txt";
-        // std::cout << "Read base frame camera pose: " << cam2world_file << std::endl;
-        // std::vector<float> cam2world_vec = LoadMatrixFromFile(cam2world_file, 4, 4);
-        // for (float n: cam2world_vec)
-        //   std::cout<< n <<std::endl;
-        // std::copy(cam2world_vec.begin(), cam2world_vec.end(), cam2world);
-        std::string cam2world_file = data_path + "/frame_" + curr_frame_prefix.str() + "_pose.txt";
+        std::string cam2world_file = reconstruct_data_folder + "/frame_" + curr_frame_prefix.str() + "_pose.txt";
         std::cout << "Read base frame camera pose: " << cam2world_file << std::endl;
         std::vector<float> tmp2world_vec = LoadMatrixFromFile(cam2world_file, 4, 4);
         std::copy(tmp2world_vec.begin(), tmp2world_vec.end(), tmp2world);

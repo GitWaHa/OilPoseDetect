@@ -42,28 +42,28 @@ class OilApp(object):
         pose_ar_tag = tf2_gm.PoseStamped()
 
         # # 实际使用
-        # pose_ar_tag.pose.position.x = position[0]
-        # pose_ar_tag.pose.position.y = position[1]
-        # pose_ar_tag.pose.position.z = position[2]
-
-        # pose_ar_tag.pose.orientation.x = orientation[0]
-        # pose_ar_tag.pose.orientation.y = orientation[1]
-        # pose_ar_tag.pose.orientation.z = orientation[2]
-        # pose_ar_tag.pose.orientation.w = orientation[3]
-
-        # # 测试使用
-        is_find = True
-        orientation = tf_trans.quaternion_from_euler(-55 * math.pi / 180.,
-                                                     0 * math.pi / 180.,
-                                                     25 * math.pi / 180.)
-        pose_ar_tag.pose.position.x = -0.119
-        pose_ar_tag.pose.position.y = 0.4
-        pose_ar_tag.pose.position.z = 1.16
+        pose_ar_tag.pose.position.x = position[0]
+        pose_ar_tag.pose.position.y = position[1]
+        pose_ar_tag.pose.position.z = position[2]
 
         pose_ar_tag.pose.orientation.x = orientation[0]
         pose_ar_tag.pose.orientation.y = orientation[1]
         pose_ar_tag.pose.orientation.z = orientation[2]
         pose_ar_tag.pose.orientation.w = orientation[3]
+
+        # # # 测试使用
+        # is_find = True
+        # orientation = tf_trans.quaternion_from_euler(-55 * math.pi / 180.,
+        #                                              0 * math.pi / 180.,
+        #                                              25 * math.pi / 180.)
+        # pose_ar_tag.pose.position.x = -0.119
+        # pose_ar_tag.pose.position.y = 0.4
+        # pose_ar_tag.pose.position.z = 1.16
+
+        # pose_ar_tag.pose.orientation.x = orientation[0]
+        # pose_ar_tag.pose.orientation.y = orientation[1]
+        # pose_ar_tag.pose.orientation.z = orientation[2]
+        # pose_ar_tag.pose.orientation.w = orientation[3]
 
         pose_ar_tag.header.frame_id = "base_link"
 

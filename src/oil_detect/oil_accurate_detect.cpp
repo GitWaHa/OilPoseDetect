@@ -28,16 +28,16 @@ int OilAccurateDetect::detect_once(const PCLPointCloud::Ptr cloud)
 
 void OilAccurateDetect::saveDataFrame(const std::string save_folder, const std::string save_num)
 {
-    std::string cloud_path = save_folder + "frame_" + save_num + "_reconstruct_cloud" + ".pcd";
+    std::string cloud_path = save_folder + "/frame_" + save_num + "_reconstruct_cloud" + ".pcd";
     pcl::io::savePCDFile(cloud_path, *cloud_);
 
-    std::string oil_cloud_path = save_folder + "frame_" + save_num + "_oil_cloud" + ".pcd";
+    std::string oil_cloud_path = save_folder + "/frame_" + save_num + "_oil_cloud" + ".pcd";
     pcl::io::savePCDFile(oil_cloud_path, *oil_cloud_);
 
-    std::string plane_cloud_path = save_folder + "frame_" + save_num + "_plane_cloud" + ".pcd";
+    std::string plane_cloud_path = save_folder + "/frame_" + save_num + "_plane_cloud" + ".pcd";
     pcl::io::savePCDFile(plane_cloud_path, *plane_cloud_);
 
-    std::string notplane_cloud_path = save_folder + "frame_" + save_num + "_notplane_cloud" + ".pcd";
+    std::string notplane_cloud_path = save_folder + "/frame_" + save_num + "_notplane_cloud" + ".pcd";
     pcl::io::savePCDFile(notplane_cloud_path, *not_plane_cloud_);
 }
 
@@ -74,10 +74,10 @@ int OilAccurateDetect::poseDetect()
     seg.setInputCloud(cloud_);
     // seg.setAxis();
 
-    seg.setOptimizeCoefficients(false);
+    seg.setOptimizeCoefficients(true);
     seg.setModelType(pcl::SACMODEL_PLANE);
     seg.setMethodType(pcl::SAC_RANSAC);
-    seg.setDistanceThreshold(0.010);
+    seg.setDistanceThreshold(0.005);
     seg.setMaxIterations(10000);
     seg.segment(*inliers, *coefficients);
 

@@ -75,7 +75,7 @@ if __name__ == "__main__":
     for i in range(max_plan):
         (plan, fraction) = oil.oilCartesianPath(move_group,
                                                 direction=OilApp.Z,
-                                                distance_in=0.12)
+                                                distance_in=0.10)
         print("compute_cartesian_path fraction:", fraction)
 
         if (fraction >= 0.95):
@@ -98,7 +98,7 @@ if __name__ == "__main__":
     for i in range(max_plan):
         (plan, fraction) = oil.oilCartesianPath(move_group,
                                                 direction=OilApp.Z,
-                                                distance_in=-0.12)
+                                                distance_in=-0.10)
         print("compute_cartesian_path fraction:", fraction)
 
         if (fraction >= 0.95):

@@ -53,10 +53,10 @@ void TopicsCapture::subCallBack(const CameraPoseMsg::ConstPtr &camera_pose, cons
     oss.str("");
     oss << std::setfill('0') << std::setw(2) << frame_nums_++;
 
-    std::string camera_pose_path = save_folder_ + "frame_" + oss.str() + "_pose" + ".txt";
+    std::string camera_pose_path = save_folder_ + "/frame_" + oss.str() + "_pose" + ".txt";
     saveCameraPose(*camera_pose, camera_pose_path);
 
-    std::string depth_path = save_folder_ + "frame_" + oss.str() + "_depth" + ".png";
+    std::string depth_path = save_folder_ + "/frame_" + oss.str() + "_depth" + ".png";
     cv_bridge::CvImageConstPtr pCvImage;
     pCvImage = cv_bridge::toCvShare(depth_img, depth_img->encoding);
     cv::imwrite(depth_path, pCvImage->image);
