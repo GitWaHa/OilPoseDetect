@@ -4,10 +4,9 @@
 #include "camera/tuyang_receiver.h"
 #include "tsdf_fusion/topics_capture.h"
 
-#include <oil_pose_detect/DetectOilWithReconstruct.h>
-#include <oil_pose_detect/DetectOilWithReconstructRequest.h>
-#include <oil_pose_detect/DetectOilWithReconstructResponse.h>
-// #include <std_srvs/SetBool.h>
+#include <oil_pose_detector/OilPoseDetector.h>
+#include <oil_pose_detector/OilPoseDetectorRequest.h>
+#include <oil_pose_detector/OilPoseDetectorResponse.h>
 
 using namespace std;
 
@@ -19,7 +18,7 @@ public:
     DetectOilWithReconstructServer(std::string service_name, ros::NodeHandle &nh);
     ~DetectOilWithReconstructServer(){};
 
-    bool serverCallBack(oil_pose_detect::DetectOilWithReconstruct::Request &req, oil_pose_detect::DetectOilWithReconstruct::Response &res);
+    bool serverCallBack(oil_pose_detector::OilPoseDetector::Request &req, oil_pose_detector::OilPoseDetector::Response &res);
 
 private:
     void init();
@@ -56,8 +55,8 @@ DetectOilWithReconstructServer::DetectOilWithReconstructServer(std::string servi
     ROS_INFO("server is start....");
 }
 
-bool DetectOilWithReconstructServer::serverCallBack(oil_pose_detect::DetectOilWithReconstruct::Request &req,
-                                                    oil_pose_detect::DetectOilWithReconstruct::Response &res)
+bool DetectOilWithReconstructServer::serverCallBack(oil_pose_detector::OilPoseDetector::Request &req,
+                                                    oil_pose_detector::OilPoseDetector::Response &res)
 {
     std::cout << "[DetectOilWithReconstructServer] server start ..." << std::endl
               << std::endl;
@@ -113,7 +112,7 @@ void DetectOilWithReconstructServer::init()
     // tsdf相关话题的捕获，保存到某个文件夹下，方便tsdf调用
     std::string data_folder = "/home/waha/Desktop/test_data";
     auto topic_receiver = std::make_shared<TopicsCapture>(topicDepth, "/camera/pose", data_folder + "/reconstruct_data");
-    oil_detecter = std::make_unique<OilDetectTsdf>(camera_receiver, topic_receiver, data_folder);
+    oil_detecter = std::make_unique<OilDetectTsdf>(camera_receiver, topic_receiver, oil_frame_reference, data_folder);
 
     if (show)
         oil_detecter->show(15);

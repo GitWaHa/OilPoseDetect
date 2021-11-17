@@ -47,11 +47,11 @@ if __name__ == "__main__":
     #     sys.exit()
     # move_group.clear_pose_targets()
     # rospy.sleep(2)
-    names = ["oil_look_pcd", "oil_look_pcd_left"]
+    # names = ["oil_look_pcd", "oil_look_pcd_left"]
+    names = ["look_mid"]
     for name in names:
         # 设置为寻找二维码时的关节
         move_group.set_named_target(name)
-        # move_group.set_named_target("oil_look_pcd_left")
         if (not move_group.go()):
             rospy.logerr("oil_look_pcd is go filed")
             sys.exit()
@@ -68,6 +68,9 @@ if __name__ == "__main__":
         # 沿着加油口坐标系 后退一定距离作为加油起始点
         pose_look = oil.translationPoseFromEnd(pose_oil, OilApp.Z, -0.40)
         pose_look = oil.translationPoseFromEnd(pose_look, OilApp.Y, 0.05)
+        # 旋转z轴
+        pose_look = oil.rotationFrameAxis(pose_look, OilApp.X,
+                                          -10 * math.pi / 180)
         print("[transformPoseFromEnd] pose_look", pose_look)
 
         # move_group.set_pose_target(pose_out)
@@ -90,13 +93,18 @@ if __name__ == "__main__":
             sys.exit()
         print("[findOilHole] pose_oil", pose_oil)
 
+        # 微调
+        pose_oil = oil.translationPoseFromEnd(pose_oil, OilApp.X, -0.003)
+        pose_oil = oil.translationPoseFromEnd(pose_oil, OilApp.Y, 0.003)
+
         # 沿着加油口坐标系 后退一定距离作为加油起始点
         pose_out = oil.translationPoseFromEnd(pose_oil, OilApp.Z, -0.30)
         print("[transformPoseFromEnd] pose_out", pose_out)
 
         # move_group.set_pose_target(pose_out)
-        traj, traj_len, better_pose_goal = oil.find_better_traj(
-            move_group, pose_out)
+        traj, traj_len, better_pose_goal = oil.find_better_traj(move_group,
+                                                                pose_out,
+                                                                debug=False)
         if traj_len != 0:
             move_group.execute(traj, wait=True)
         else:
@@ -108,7 +116,7 @@ if __name__ == "__main__":
         for i in range(max_plan):
             (plan, fraction) = oil.oilCartesianPath(move_group,
                                                     direction=OilApp.Z,
-                                                    distance_in=0.11)
+                                                    distance_in=0.08)
             print("compute_cartesian_path fraction:", fraction)
 
             if (fraction >= 0.95):
@@ -131,7 +139,7 @@ if __name__ == "__main__":
         for i in range(max_plan):
             (plan, fraction) = oil.oilCartesianPath(move_group,
                                                     direction=OilApp.Z,
-                                                    distance_in=-0.11)
+                                                    distance_in=-0.08)
             print("compute_cartesian_path fraction:", fraction)
 
             if (fraction >= 0.95):

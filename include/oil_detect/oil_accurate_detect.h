@@ -45,6 +45,7 @@ private:
     float oil_quat_[4];
 
     PCLPointCloud::Ptr cloud_;
+    PCLPointCloud::Ptr cloud_voxel_;
     PCLPointCloud::Ptr oil_cloud_;
     PCLPointCloud::Ptr plane_cloud_;
     PCLPointCloud::Ptr not_plane_cloud_;

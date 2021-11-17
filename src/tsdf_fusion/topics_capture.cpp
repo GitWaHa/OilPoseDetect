@@ -39,7 +39,7 @@ TopicsCapture::TopicsCapture(const std::string depth_img_topic_name, const std::
 
     stop();
 
-    sync_ = new message_filters::Synchronizer<SyncPolicy>(SyncPolicy(10), *camera_pose_sub_, *depth_img_sub_);
+    sync_ = new message_filters::Synchronizer<SyncPolicy>(SyncPolicy(100), *camera_pose_sub_, *depth_img_sub_);
     sync_->registerCallback(boost::bind(&TopicsCapture::subCallBack, this, _1, _2));
 }
 TopicsCapture::~TopicsCapture()

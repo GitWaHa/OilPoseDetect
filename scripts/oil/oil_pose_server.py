@@ -17,7 +17,7 @@ import tf.transformations as tf_trans
 import tf2_ros as tf2
 import tf2_geometry_msgs as tf2_gm
 
-from oil_pose_detect.srv import DetectOilWithReconstruct, DetectOilWithReconstructRequest, DetectOilWithReconstructResponse
+from oil_pose_detector.srv import OilPoseDetector, OilPoseDetectorRequest, OilPoseDetectorResponse
 
 
 class OilPoseServer(object):
@@ -55,8 +55,7 @@ class OilPoseReconstructServer(object):
     def __init__(self, service_name="/detect_oil_pose/get_pose"):
         super(OilPoseReconstructServer, self).__init__()
 
-        self.client_ = rospy.ServiceProxy(service_name,
-                                          DetectOilWithReconstruct)
+        self.client_ = rospy.ServiceProxy(service_name, OilPoseDetector)
 
     def find(self, flag):
         is_find = True
@@ -71,10 +70,10 @@ class OilPoseReconstructServer(object):
     def clientCall(self, flag):
         print("---------- client ---------")
         # 设置request
-        request = DetectOilWithReconstructRequest()
+        request = OilPoseDetectorRequest()
         request.flag = flag
 
-        response = DetectOilWithReconstructResponse()
+        response = OilPoseDetectorResponse()
 
         response = self.client_.call(request)
 

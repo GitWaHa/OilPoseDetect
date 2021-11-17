@@ -61,12 +61,12 @@ protected:
             pcl::PointXYZRGBA *itP = &cloud->points[r * depth.cols];
             const uint16_t *itD = depth.ptr<uint16_t>(r);
             const cv::Vec3b *itC = color.ptr<cv::Vec3b>(r);
-            const float y = getLookupX().at<float>(0, r);
-            const float *itX = getLookupY().ptr<float>();
+            const float y = getLookupY().at<float>(0, r);
+            const float *itX = getLookupX().ptr<float>();
 
             for (size_t c = 0; c < (size_t)depth.cols; ++c, ++itP, ++itD, ++itC, ++itX)
             {
-                register const float depthValue = *itD / 4000.0f;
+                register const float depthValue = *itD / 1000.0f;
                 // std::cout << depthValue << endl;
                 // Check for invalid measurements
                 if (*itD == 0)
@@ -79,14 +79,14 @@ protected:
                 itP->z = depthValue;
                 itP->x = *itX * depthValue;
                 itP->y = y * depthValue;
-                itP->b = 255;
-                itP->g = 255;
-                itP->r = 255;
-                itP->a = 255;
-                // itP->b = itC->val[0];
-                // itP->g = itC->val[1];
-                // itP->r = itC->val[2];
+                // itP->b = 255;
+                // itP->g = 255;
+                // itP->r = 255;
                 // itP->a = 255;
+                itP->b = itC->val[0];
+                itP->g = itC->val[1];
+                itP->r = itC->val[2];
+                itP->a = 255;
             }
         }
     }

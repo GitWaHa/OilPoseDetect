@@ -1,22 +1,26 @@
 <launch>
     <arg name="rviz" default="false" />
 
-
-    <!-- start the rviz -->
-    <node if="$(arg rviz)" name="$(anon rviz)" pkg="rviz" type="rviz" respawn="false" args="-d $(find oil_filler_pose)/launch/oil_filler_detect.rviz" output="screen" />
+    <node name="camera_pose_publish" pkg="oil_pose_detector" type="camera_pose_publisher.py" respawn="false" output="screen">
+        <param name="base_frame" value="base_link" />
+        <param name="camera_frame" value="camera_rgb_optical_frame" />
+    </node>
 
     <!-- start the oil_filler_pose -->
-    <node name="detect_oil_with_reconstruct" pkg="oil_pose_detect" type="detect_oil_with_reconstruct" respawn="false" output="screen">
+    <node name="detect_oil_with_reconstruct" pkg="oil_pose_detector" type="detect_oil_with_reconstruct" respawn="false" output="screen">
         <param name="show" value="true" />
         <param name="useExact" value="false" />
         <param name="useCompressed" value="false" />
 
         <!-- tuyang camera -->
         <param name="camera" value="tuyang" />
-        <param name="oil_frame_reference" value="camera_depth_optical_frame" />
+        <param name="oil_frame_reference" value="camera_rgb_optical_frame" />
         <param name="topicColor" value="/camera/rgb/image_rect_color" />
-        <param name="topicDepth" value="/camera/depth_registered/sw_registered/image_rect_raw" />
+        <param name="topicDepth" value="/camera/depth/image_align" />
         <!-- <param name="topicDepth" value="/camera/depth/image_rect" /> -->
     </node>
+
+    <!-- start the rviz -->
+    <node if="$(arg rviz)" name="$(anon rviz)" pkg="rviz" type="rviz" respawn="false" args="-d $(find oil_filler_pose)/launch/oil_filler_detect.rviz" output="screen" />
 
 </launch>

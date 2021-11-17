@@ -102,9 +102,9 @@ extern "C" void TSDF_Fusion(const char * data_folder, int frame_nums, const floa
     // 截断距离
     float trunc_margin = voxel_size * 10;
     // 网格数量，总数=voxel_grid_dim_x*voxel_grid_dim_y*voxel_grid_dim_z
-    int voxel_grid_dim_x = 300;
-    int voxel_grid_dim_y = 300;
-    int voxel_grid_dim_z = 300;
+    int voxel_grid_dim_x = 400;
+    int voxel_grid_dim_y = 400;
+    int voxel_grid_dim_z = 400;
 
     // TODO: 加油口初始位置（世界坐标系）
     float world_voxel_grid_origin_x = target_pos[0];

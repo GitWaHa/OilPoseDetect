@@ -11,7 +11,7 @@
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <tf2/transform_datatypes.h>
 
-OilRoughDetect::OilRoughDetect() : cloud_(new PCLPointCloudRGB)
+OilRoughDetect::OilRoughDetect(std::string color_frame) : color_frame_(color_frame), cloud_(new PCLPointCloudRGB)
 {
 }
 
@@ -218,7 +218,7 @@ int OilRoughDetect::getPosFromRoi()
     // computerMeanValue(plane, oil_pos_in_camera_);  // FIXME:
 
     //转换到世界坐标系
-    getCameraPose("camera_color_optical_frame", "base_link");
+    getCameraPose(color_frame_, "base_link");
     convertPosToWorld(oil_pos_in_camera_, oil_pos_in_world_);
 
     return 0;

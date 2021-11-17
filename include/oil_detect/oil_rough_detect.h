@@ -22,7 +22,7 @@ public:
     using PCLPointCloud = pcl::PointCloud<PCLPoint>;
 
 public:
-    OilRoughDetect(/* args */);
+    OilRoughDetect(std::string color_frame);
     ~OilRoughDetect();
 
     int detect_once(const cv::Mat &color, const cv::Mat &depth, const PCLPointCloudRGB::Ptr cloud, float *oil_pose);
@@ -55,6 +55,7 @@ private:
     /* data */
     float oil_pos_in_camera_[3];
     float oil_pos_in_world_[3];
+    std::string color_frame_;
 
     tf::StampedTransform camera_pose_;
 

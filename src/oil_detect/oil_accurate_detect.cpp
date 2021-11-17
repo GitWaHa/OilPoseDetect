@@ -6,9 +6,10 @@
 #include <pcl/features/normal_3d.h>
 #include <pcl/filters/extract_indices.h>
 #include <pcl/keypoints/uniform_sampling.h>
+#include <pcl/filters/voxel_grid.h> //体素滤波相关
 
 OilAccurateDetect::OilAccurateDetect()
-    : cloud_(new PCLPointCloud), oil_cloud_(new PCLPointCloud),
+    : cloud_(new PCLPointCloud), cloud_voxel_(new PCLPointCloud), oil_cloud_(new PCLPointCloud),
       plane_cloud_(new PCLPointCloud), not_plane_cloud_(new PCLPointCloud)
 {
 }
@@ -66,12 +67,19 @@ void OilAccurateDetect::planeToQuat(pcl::ModelCoefficients coef, float *quat)
 
 int OilAccurateDetect::poseDetect()
 {
+    // 体素化点云
+    pcl::VoxelGrid<pcl::PointXYZ> sor;
+    sor.setInputCloud(cloud_); //给滤波对象设置需过滤的点云
+    float grid_size = 0.001f;
+    sor.setLeafSize(grid_size, grid_size, grid_size); //设置滤波时创建的体素大小
+    sor.filter(*cloud_voxel_);                        //执行滤波处理
+
     /// 平面拟合 // 平面方程: ax+by+cz+d = 0
     std::vector<int> indices(0);
     pcl::SACSegmentation<pcl::PointXYZ> seg;
     pcl::PointIndices::Ptr inliers(new pcl::PointIndices);
     pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients);
-    seg.setInputCloud(cloud_);
+    seg.setInputCloud(cloud_voxel_);
     // seg.setAxis();
 
     seg.setOptimizeCoefficients(true);
@@ -96,17 +104,17 @@ int OilAccurateDetect::poseDetect()
               << "oil_quat_: " << oil_quat_[0] << "," << oil_quat_[1] << "," << oil_quat_[2] << "," << oil_quat_[3] << std::endl;
 
     pcl::ExtractIndices<pcl::PointXYZ> extract;
-    extract.setInputCloud(cloud_);
+    extract.setInputCloud(cloud_voxel_);
     extract.setIndices(inliers);
     extract.setNegative(true);
     extract.filter(indices);
 
-    extract.setInputCloud(cloud_);
+    extract.setInputCloud(cloud_voxel_);
     extract.setIndices(inliers);
     extract.setNegative(false);
     extract.filter(*plane_cloud_);
 
-    extract.setInputCloud(cloud_);
+    extract.setInputCloud(cloud_voxel_);
     extract.setIndices(inliers);
     extract.setNegative(true);
     extract.filter(*not_plane_cloud_);

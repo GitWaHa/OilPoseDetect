@@ -25,8 +25,8 @@ void setPose(geometry_msgs::Pose &pose, double x, double y, double z, double rol
     pose.orientation.w = quat.getW();
 }
 
-OilDetectTsdf::OilDetectTsdf(std::shared_ptr<CameraReceiver> img_receiver, std::shared_ptr<TopicsCapture> topic_capture, std::string root_floder)
-    : img_receiver_(img_receiver), topic_capture_(topic_capture), move_group_("arm"), tsdf_data_floder_(root_floder)
+OilDetectTsdf::OilDetectTsdf(std::shared_ptr<CameraReceiver> img_receiver, std::shared_ptr<TopicsCapture> topic_capture, std::string color_frame, std::string root_floder)
+    : img_receiver_(img_receiver), topic_capture_(topic_capture), oil_rough_detecter_(color_frame), move_group_("arm"), tsdf_data_floder_(root_floder)
 {
     img_receiver->run();
 
@@ -81,23 +81,21 @@ int OilDetectTsdf::run()
     cout << "[info]"
          << "rough_pos:" << rough_pos[0] << "," << rough_pos[1] << "," << rough_pos[2] << endl;
 
-    // return -1;
-
     // 多视角采集
-    // cout << "[info] "
-    //      << "多视角采集...！" << endl;
-    // int multi_num = multiViewDataCollect(rough_pos, tsdf_folder);
-    // if (multi_num == 0)
-    // {
-    //     cout << "[error] "
-    //          << "多视角采集失败！" << endl;
-    //     return 2;
-    // }
+    cout << "[info] "
+         << "多视角采集...！" << endl;
+    int multi_num = multiViewDataCollect(rough_pos, tsdf_folder);
+    if (multi_num == 0)
+    {
+        cout << "[error] "
+             << "多视角采集失败！" << endl;
+        return 2;
+    }
 
     // 三维重建
-    // cout << "[info] "
-    //      << "三维重建...！" << endl;
-    // tsdf_fusion_.Fusion(tsdf_folder, multi_num, rough_pos, ply_path);
+    cout << "[info] "
+         << "三维重建...！" << endl;
+    tsdf_fusion_.Fusion(tsdf_folder, multi_num, rough_pos, ply_path);
 
     // 精定位
     cout << "[info] "
@@ -192,9 +190,10 @@ int OilDetectTsdf::multiViewDataCollect(float *oil_position, std::string output_
     auto is_ok = move_group_.move();
     if (is_ok == false)
         return -1;
+    ros::Duration(1).sleep();
 
     // 较慢速度三维重建
-    move_group_.setMaxVelocityScalingFactor(0.2);
+    move_group_.setMaxVelocityScalingFactor(0.1);
     topic_capture_->start();
     for (std::string name : name_targets_)
     {
@@ -207,6 +206,7 @@ int OilDetectTsdf::multiViewDataCollect(float *oil_position, std::string output_
             return -1;
         }
     }
+    ros::Duration(1).sleep();
     topic_capture_->stop();
 
     return topic_capture_->getFrameNums();

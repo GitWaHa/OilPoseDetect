@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(oil_pose_detect)
+project(oil_pose_detector)
 
 set(CMAKE_CXX_STANDARD 14)
 # set(CMAKE_CXX_FLAGS "-O3 -fopenmp -fPIC -Wno-deprecated -Wenum-compare -Wno-ignored-attributes -std=c++14")
@@ -56,7 +56,7 @@ endif(${CUDA_FOUND})
 
 add_service_files(
   FILES
-  DetectOilWithReconstruct.srv
+  OilPoseDetector.srv
 )
 
 generate_messages(
@@ -138,11 +138,22 @@ target_link_libraries (detect_oil_with_reconstruct
   ${cv_bridge_LIBRARIES}
 )
 
-add_executable (tsdf_test src/tsdf_test.cpp
+add_executable (test_tsdf src/test_tsdf.cpp
 )
-target_link_libraries (tsdf_test
+target_link_libraries (test_tsdf
   tsdf_fusion
   tsdf_cuda
+  ${PCL_LIBRARIES}
+  ${OpenCV_LIBRARIES}
+  ${catkin_LIBRARIES}
+  ${image_transport_LIBRARIES}
+  ${cv_bridge_LIBRARIES}
+)
+
+add_executable (test_tsdf_data_capture src/test_tsdf_data_capture.cpp
+  src/tsdf_fusion/topics_capture.cpp
+)
+target_link_libraries (test_tsdf_data_capture
   ${PCL_LIBRARIES}
   ${OpenCV_LIBRARIES}
   ${catkin_LIBRARIES}

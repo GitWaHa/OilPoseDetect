@@ -18,7 +18,7 @@
 class OilDetectTsdf
 {
 public:
-    OilDetectTsdf(std::shared_ptr<CameraReceiver> img_receiver, std::shared_ptr<TopicsCapture> topic_capture, std::string root_floder);
+    OilDetectTsdf(std::shared_ptr<CameraReceiver> img_receiver, std::shared_ptr<TopicsCapture> topic_capture, std::string color_frame, std::string root_floder);
     ~OilDetectTsdf();
 
     int run();

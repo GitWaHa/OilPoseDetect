@@ -1,14 +1,14 @@
 <launch>
     <arg name="rviz" default="false" />
 
-    <node name="camera_pose_publish" pkg="oil_pose_detect" type="camera_pose_publisher.py" respawn="false" output="screen">
+    <node name="camera_pose_publish" pkg="oil_pose_detector" type="camera_pose_publisher.py" respawn="false" output="screen">
         <param name="base_frame" value="base_link" />
         <param name="camera_frame" value="camera_color_optical_frame" />
     </node>
 
     <!-- start the oil_filler_pose -->
-    <node name="detect_oil_pose" pkg="oil_pose_detect" type="detect_oil_with_reconstruct" respawn="false" output="screen">
-        <param name="show" value="false" />
+    <node name="detect_oil_pose" pkg="oil_pose_detector" type="detect_oil_with_reconstruct" respawn="false" output="screen">
+        <param name="show" value="true" />
         <param name="useExact" value="true" />
         <param name="useCompressed" value="false" />
 

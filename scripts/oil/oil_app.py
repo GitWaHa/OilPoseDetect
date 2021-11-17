@@ -124,7 +124,8 @@ class OilApp(object):
                          move_group,
                          direction=2,
                          distance_in=0.09,
-                         max_num=200):
+                         max_num=200,
+                         debug=False):
         ## 笛卡尔路径规划，加油动作
         # 设置路径点
         waypoints = []
@@ -158,9 +159,11 @@ class OilApp(object):
 
                     if (np.max(np.abs(np.array(pre_pos) - np.array(pos))) >
                             0.04):
-                        print("is not ok",
-                              np.max(np.abs(np.array(pre_pos) -
-                                            np.array(pos))))
+                        if debug:
+                            print(
+                                "is not ok",
+                                np.max(
+                                    np.abs(np.array(pre_pos) - np.array(pos))))
                         is_ok = False
                         break
                     else:
@@ -191,7 +194,8 @@ class OilApp(object):
         for data in traj_len_set:
             traj_len_count_list.append(data)
             traj_len_count.append(traj_len_ls.count(data))
-            print(data, traj_len_ls.count(data))
+            if debug:
+                print(data, traj_len_ls.count(data))
 
         set_index = traj_len_count.index(max(traj_len_count))
         better_traj_idx = traj_len_ls.index(traj_len_count_list[set_index])
@@ -259,7 +263,12 @@ class OilApp(object):
         new_traj.joint_trajectory.points = points
         return new_traj
 
-    def find_better_traj(self, group, pose_goal, max_num=50, is_turn=False):
+    def find_better_traj(self,
+                         group,
+                         pose_goal,
+                         max_num=50,
+                         is_turn=False,
+                         debug=False):
         # get short traj
         traj_ls = []
         traj_len_ls = []
@@ -287,16 +296,18 @@ class OilApp(object):
             max_failed = 5
             for i in range(max_num):
                 if max_failed < 0 or rospy.is_shutdown():
-                    print(
-                        "Maximum number of failures reached or rospy.is_shutdown()"
-                    )
+                    if debug:
+                        print(
+                            "Maximum number of failures reached or rospy.is_shutdown()"
+                        )
                     return None, 0, None
                 group.set_start_state_to_current_state()
                 group.set_pose_target(pose_goal)
                 traj = group.plan()
 
                 traj_len = len(traj.joint_trajectory.points)
-                print("[INFO] Traj", i, " len:", traj_len)
+                if debug:
+                    print("[INFO] Traj", i, " len:", traj_len)
                 if traj_len == 0:
                     max_failed -= 1
                     continue
