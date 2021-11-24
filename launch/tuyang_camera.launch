@@ -16,7 +16,8 @@
   <!-- By default, calibrations are stored to file://${ROS_HOME}/camera_info/${NAME}.yaml,
        where ${NAME} is of the form "[rgb|depth]_[serial#]", e.g. "depth_B00367707227042B".
        See camera_info_manager docs for calibration URL details. -->
-  <arg name="rgb_camera_info_url" default="file:///home/waha/.ros/camera_info/rgb_PercipioDepth_Percipio_backup.yaml" />
+  <!-- <arg name="rgb_camera_info_url" default="file:///home/waha/.ros/camera_info/rgb_PercipioDepth_Percipio_backup.yaml" /> -->
+  <arg name="rgb_camera_info_url" default="" />
   <arg name="depth_camera_info_url" default="" />
 
   <!-- Hardware depth registration -->
@@ -115,6 +116,7 @@
   <!-- start the rviz -->
   <include if="$(arg rviz)" file="$(find openni2_launch)/launch/rviz.launch"></include>
 
-  <node name="tuyang_align_server" pkg="tuyang-depth-image-alignment" type="align_server" respawn="false" output="screen"></node>
+  <!-- 深度图对齐到rgb -->
+  <include file="$(find tuyang-depth-image-alignment)/launch/alignment_server.launch"></include>
 
 </launch>

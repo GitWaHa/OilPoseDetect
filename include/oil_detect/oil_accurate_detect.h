@@ -35,9 +35,37 @@ public:
         return oil_quat_;
     }
 
+    const PCLPointCloud::Ptr getOriginalCloud()
+    {
+        return cloud_;
+    }
+
+    const PCLPointCloud::Ptr getVoxelCloud()
+    {
+        return cloud_voxel_;
+    }
+
+    const PCLPointCloud::Ptr getPlaneCloud()
+    {
+        return plane_cloud_;
+    }
+
+    const PCLPointCloud::Ptr getNotPlaneCloud()
+    {
+        return not_plane_cloud_;
+    }
+
+    const PCLPointCloud::Ptr getOilCloud()
+    {
+        return oil_cloud_;
+    }
+
 private:
     int poseDetect();
+
     void planeToQuat(pcl::ModelCoefficients coef, float *quat);
+
+    std::vector<int> extractAbovePlane(PCLPointCloud::Ptr cloud, float A, float B, float C, float D, float min_dis, float max_dis);
 
 private:
     /* data */

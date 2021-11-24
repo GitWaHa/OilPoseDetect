@@ -44,19 +44,17 @@ void OilAccurateDetect::saveDataFrame(const std::string save_folder, const std::
 
 void OilAccurateDetect::planeToQuat(pcl::ModelCoefficients coef, float *quat)
 {
-    double angle_y = atan(coef.values[0] / coef.values[2]); // 弧度(-pi/2,pi/2) atan(x/z) 法向量在xz平面投影与z轴夹角
-    double angle_x = atan(coef.values[1] / coef.values[2]); // 弧度(-pi/2,pi/2) atan(y/z) 法向量在xy平面投影与z轴夹角
-
-    // 绕y轴旋转angle_y, 则法向量在xz平面投影与旋转后的z轴重合
-    Eigen::AngleAxisd rot_vector_y(angle_y, Eigen::Vector3d(0, 1, 0));
-    Eigen::Matrix3d rot_matrix_y = rot_vector_y.matrix();
-
-    // 绕x轴旋转-angle_x, 则法向量在yz平面投影与旋转后的z轴重合
-    Eigen::AngleAxisd rot_vector_x(-angle_x, Eigen::Vector3d(1, 0, 0));
-    Eigen::Matrix3d rot_matrix_x = rot_vector_x.matrix();
+    // 根据平面法线（z轴），求x，y轴
+    Eigen::Vector3d z(coef.values[0], coef.values[1], coef.values[2]);
+    Eigen::Vector3d v(0, 0, -1.0);
+    auto x = z.cross(v);
+    auto y = z.cross(x);
 
     // 原始坐标系分别绕x轴和y轴旋转后, 使z轴与平面法向量平行, 作为中心点处坐标系
-    Eigen::Matrix3d rot_matrix = rot_matrix_x * rot_matrix_y;
+    Eigen::Matrix3d rot_matrix(3, 3);
+    rot_matrix.col(0) << x;
+    rot_matrix.col(1) << y;
+    rot_matrix.col(2) << z;
 
     Eigen::Quaterniond quat_eigen(rot_matrix);
     quat[0] = quat_eigen.x();
@@ -114,12 +112,16 @@ int OilAccurateDetect::poseDetect()
     extract.setNegative(false);
     extract.filter(*plane_cloud_);
 
+    auto not_plane_idx = extractAbovePlane(cloud_voxel_,
+                                           coefficients->values[0], coefficients->values[1],
+                                           coefficients->values[2], coefficients->values[3],
+                                           0.01, 0.1);
+    inliers->indices = not_plane_idx;
+
     extract.setInputCloud(cloud_voxel_);
     extract.setIndices(inliers);
-    extract.setNegative(true);
+    extract.setNegative(false);
     extract.filter(*not_plane_cloud_);
-
-    inliers->indices = indices;
 
     if (inliers->indices.size() > 100)
     {
@@ -150,4 +152,24 @@ int OilAccurateDetect::poseDetect()
     }
 
     return 0;
+}
+
+std::vector<int> OilAccurateDetect::extractAbovePlane(PCLPointCloud::Ptr cloud, float A, float B, float C, float D, float min_dis, float max_dis)
+{
+    std::vector<int> idx;
+
+    auto down = std::sqrt(std::pow(A, 2) + std::pow(B, 2) + std::pow(C, 2));
+
+    for (int i = 0; i < cloud->size(); i++)
+    {
+        auto point = cloud->at(i);
+        // 计算距离
+        auto dis = abs(A * point.x + B * point.y + C * point.z + D) / down;
+        if (dis >= min_dis && dis <= max_dis)
+        {
+            idx.push_back(i);
+        }
+    }
+
+    return idx;
 }

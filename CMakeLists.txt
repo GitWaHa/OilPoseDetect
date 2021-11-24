@@ -109,8 +109,10 @@ ${catkin_LIBRARIES}
 ${image_transport_LIBRARIES}
 ${cv_bridge_LIBRARIES})
 
-add_executable (split_plane src/split_plane.cpp)
-target_link_libraries (split_plane
+add_executable (test_accurate_detect src/test_accurate_detect.cpp
+  src/oil_detect/oil_accurate_detect.cpp
+)
+target_link_libraries (test_accurate_detect
 ${PCL_LIBRARIES}
 ${catkin_LIBRARIES})
 
