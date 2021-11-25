@@ -12,8 +12,9 @@
 #include "camera/camera_receiver.h"
 #include "oil_detect/oil_rough_detect.h"
 #include "oil_detect/oil_accurate_detect.h"
-#include "tsdf_fusion/tsdf_fusion.h"
-#include "tsdf_fusion/topics_capture.h"
+#include "fusion/tsdf_fusion.h"
+#include "fusion/fusion.h"
+#include "fusion/topics_capture.h"
 
 class OilDetectTsdf
 {
@@ -50,7 +51,7 @@ private:
     OilAccurateDetect oil_accurate_detecter_;
 
     std::string tsdf_data_floder_;
-    TsdfFusion tsdf_fusion_;
+    Fusion *fusion_;
 
     float init_target_x_;
     float init_target_y_;

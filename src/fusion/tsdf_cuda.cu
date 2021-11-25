@@ -1,8 +1,8 @@
 // ---------------------------------------------------------
 // Author: Andy Zeng, Princeton University, 2016
 // ---------------------------------------------------------
-#include "tsdf_fusion/tsdf_cuda.cuh"
-#include "tsdf_fusion/utils.hpp"
+#include "fusion/tsdf_cuda.cuh"
+#include "fusion/utils.h"
 
 #include <iostream>
 #include <fstream>
@@ -10,6 +10,24 @@
 #include <sstream>
 #include <string>
 
+void FatalError(const int lineNumber = 0)
+{
+  std::cerr << "FatalError";
+  if (lineNumber != 0)
+    std::cerr << " at LINE " << lineNumber;
+  std::cerr << ". Program Terminated." << std::endl;
+  cudaDeviceReset();
+  exit(EXIT_FAILURE);
+}
+
+void checkCUDA(const int lineNumber, cudaError_t status)
+{
+  if (status != cudaSuccess)
+  {
+    std::cerr << "CUDA failure at LINE " << lineNumber << ": " << status << std::endl;
+    FatalError();
+  }
+}
 
 // CUDA kernel function to integrate a TSDF voxel volume given depth images
 __global__

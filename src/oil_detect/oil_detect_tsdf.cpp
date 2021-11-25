@@ -25,8 +25,12 @@ void setPose(geometry_msgs::Pose &pose, double x, double y, double z, double rol
     pose.orientation.w = quat.getW();
 }
 
-OilDetectTsdf::OilDetectTsdf(std::shared_ptr<CameraReceiver> img_receiver, std::shared_ptr<TopicsCapture> topic_capture, std::string color_frame, std::string root_floder)
-    : img_receiver_(img_receiver), topic_capture_(topic_capture), oil_rough_detecter_(color_frame), move_group_("arm"), tsdf_data_floder_(root_floder)
+OilDetectTsdf::OilDetectTsdf(std::shared_ptr<CameraReceiver> img_receiver,
+                             std::shared_ptr<TopicsCapture> topic_capture, std::string color_frame,
+                             std::string root_floder)
+    : img_receiver_(img_receiver), topic_capture_(topic_capture),
+      oil_rough_detecter_(color_frame), move_group_("arm"),
+      tsdf_data_floder_(root_floder), fusion_(new TsdfFusion)
 {
     img_receiver->run();
 
@@ -95,7 +99,7 @@ int OilDetectTsdf::run()
     // 三维重建
     cout << "[info] "
          << "三维重建...！" << endl;
-    tsdf_fusion_.Fusion(tsdf_folder, multi_num, rough_pos, ply_path);
+    fusion_->fusion(tsdf_folder, multi_num, rough_pos, ply_path);
 
     // 精定位
     cout << "[info] "
@@ -190,11 +194,11 @@ int OilDetectTsdf::multiViewDataCollect(float *oil_position, std::string output_
     auto is_ok = move_group_.move();
     if (is_ok == false)
         return -1;
-    ros::Duration(1).sleep();
 
     // 较慢速度三维重建
     move_group_.setMaxVelocityScalingFactor(0.1);
     topic_capture_->start();
+    ros::Duration(1).sleep();
     for (std::string name : name_targets_)
     {
         move_group_.setNamedTarget(name);

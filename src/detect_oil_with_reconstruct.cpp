@@ -2,7 +2,7 @@
 
 #include "oil_detect/oil_detect_tsdf.h"
 #include "camera/tuyang_receiver.h"
-#include "tsdf_fusion/topics_capture.h"
+#include "fusion/topics_capture.h"
 
 #include <oil_pose_detector/OilPoseDetector.h>
 #include <oil_pose_detector/OilPoseDetectorRequest.h>

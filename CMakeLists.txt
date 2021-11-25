@@ -117,17 +117,18 @@ ${PCL_LIBRARIES}
 ${catkin_LIBRARIES})
 
 # 
-add_library(tsdf_fusion src/tsdf_fusion/tsdf_fusion.cpp)
+add_library(tsdf_fusion src/fusion/tsdf_fusion.cpp)
 
 cuda_add_library(tsdf_cuda STATIC
-  src/tsdf_fusion/tsdf_cuda.cu
+  src/fusion/tsdf_cuda.cu
+  src/fusion/utils.cpp
 )
 
 add_executable (detect_oil_with_reconstruct src/detect_oil_with_reconstruct.cpp
   src/oil_detect/oil_detect_tsdf.cpp
   src/oil_detect/oil_accurate_detect.cpp
   src/oil_detect/oil_rough_detect.cpp
-  src/tsdf_fusion/topics_capture.cpp
+  src/fusion/topics_capture.cpp
 )
 # add_dependencies(detect_oil_with_reconstruct tsdf_fusion)
 target_link_libraries (detect_oil_with_reconstruct
@@ -140,9 +141,10 @@ target_link_libraries (detect_oil_with_reconstruct
   ${cv_bridge_LIBRARIES}
 )
 
-add_executable (test_tsdf src/test_tsdf.cpp
+add_executable (test_fusion src/test_fusion.cpp
+  src/fusion/simple_fusion.cpp
 )
-target_link_libraries (test_tsdf
+target_link_libraries (test_fusion
   tsdf_fusion
   tsdf_cuda
   ${PCL_LIBRARIES}
@@ -153,7 +155,7 @@ target_link_libraries (test_tsdf
 )
 
 add_executable (test_tsdf_data_capture src/test_tsdf_data_capture.cpp
-  src/tsdf_fusion/topics_capture.cpp
+  src/fusion/topics_capture.cpp
 )
 target_link_libraries (test_tsdf_data_capture
   ${PCL_LIBRARIES}

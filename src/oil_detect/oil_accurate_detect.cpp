@@ -98,6 +98,7 @@ int OilAccurateDetect::poseDetect()
 
     // oil 旋转四元数
     planeToQuat(*coefficients, oil_quat_);
+    cout << *coefficients << endl;
     std::cout << "[OilAccurateDetect] "
               << "oil_quat_: " << oil_quat_[0] << "," << oil_quat_[1] << "," << oil_quat_[2] << "," << oil_quat_[3] << std::endl;
 
@@ -132,9 +133,11 @@ int OilAccurateDetect::poseDetect()
         // seg_circle.setIndices(inliers);
         seg_circle.setOptimizeCoefficients(true);
         seg_circle.setModelType(pcl::SACMODEL_CIRCLE3D);
-        seg_circle.setRadiusLimits(0.04, 0.05);
+        seg_circle.setAxis({coefficients->values[0], coefficients->values[1],
+                            coefficients->values[2]});
+        seg_circle.setRadiusLimits(0.04, 0.043);
         seg_circle.setMethodType(pcl::SAC_RANSAC);
-        seg_circle.setDistanceThreshold(0.01);
+        seg_circle.setDistanceThreshold(0.003);
         seg_circle.setMaxIterations(1000);
         seg_circle.segment(*inliers, coefficients_circle);
 
@@ -144,6 +147,7 @@ int OilAccurateDetect::poseDetect()
         extract.filter(*oil_cloud_);
 
         // oil 平移
+        cout << coefficients_circle << endl;
         oil_trans_[0] = coefficients_circle.values[0];
         oil_trans_[1] = coefficients_circle.values[1];
         oil_trans_[2] = coefficients_circle.values[2];

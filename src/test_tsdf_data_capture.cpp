@@ -1,5 +1,5 @@
 #include <iostream>
-#include "tsdf_fusion/topics_capture.h"
+#include "fusion/topics_capture.h"
 
 int main(int argc, char **argv)
 {

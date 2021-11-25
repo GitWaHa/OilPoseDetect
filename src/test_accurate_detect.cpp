@@ -57,7 +57,7 @@ int main(int argn, char **argv)
 
     // 读取点云
     pcl::PointCloud<pcl::PointXYZ>::Ptr raw_cloud(new pcl::PointCloud<pcl::PointXYZ>);
-    pcl::io::loadPLYFile("/home/waha/Desktop/test_data/tsdf_cloud.ply", *raw_cloud);
+    pcl::io::loadPLYFile("/home/waha/Desktop/test_data/fusion_cloud_test.ply", *raw_cloud);
     // pcl::io::loadPCDFile("/home/waha/Desktop/rgbdCloud.pcd", *cloud_of);
 
     detector.detect_once(raw_cloud);

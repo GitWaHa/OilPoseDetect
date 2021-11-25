@@ -1,4 +1,4 @@
-#include "tsdf_fusion/topics_capture.h"
+#include "fusion/topics_capture.h"
 #include <ostream>
 #include <fstream>
 
