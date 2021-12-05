@@ -67,6 +67,8 @@ private:
 
     std::vector<int> extractAbovePlane(PCLPointCloud::Ptr cloud, float A, float B, float C, float D, float min_dis, float max_dis);
 
+    std::vector<float> correctionNormalDirection(PCLPointCloud::Ptr cloud, float A, float B, float C, float D);
+
 private:
     /* data */
     float oil_trans_[3];

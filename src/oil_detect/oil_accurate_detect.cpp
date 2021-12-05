@@ -45,9 +45,11 @@ void OilAccurateDetect::saveDataFrame(const std::string save_folder, const std::
 void OilAccurateDetect::planeToQuat(pcl::ModelCoefficients coef, float *quat)
 {
     // 根据平面法线（z轴），求x，y轴
-    Eigen::Vector3d z(coef.values[0], coef.values[1], coef.values[2]);
-    Eigen::Vector3d v(0, 0, -1.0);
+    auto normal = correctionNormalDirection(cloud_voxel_, coef.values[0], coef.values[1], coef.values[2], coef.values[3]);
+    Eigen::Vector3d z(normal[0], normal[1], normal[2]);
+    Eigen::Vector3d v(0, 0, 1.0);
     auto x = z.cross(v);
+    x = x.normalized();
     auto y = z.cross(x);
 
     // 原始坐标系分别绕x轴和y轴旋转后, 使z轴与平面法向量平行, 作为中心点处坐标系
@@ -68,7 +70,7 @@ int OilAccurateDetect::poseDetect()
     // 体素化点云
     pcl::VoxelGrid<pcl::PointXYZ> sor;
     sor.setInputCloud(cloud_); //给滤波对象设置需过滤的点云
-    float grid_size = 0.001f;
+    float grid_size = 0.0005f;
     sor.setLeafSize(grid_size, grid_size, grid_size); //设置滤波时创建的体素大小
     sor.filter(*cloud_voxel_);                        //执行滤波处理
 
@@ -80,10 +82,10 @@ int OilAccurateDetect::poseDetect()
     seg.setInputCloud(cloud_voxel_);
     // seg.setAxis();
 
-    seg.setOptimizeCoefficients(true);
+    seg.setOptimizeCoefficients(false);
     seg.setModelType(pcl::SACMODEL_PLANE);
     seg.setMethodType(pcl::SAC_RANSAC);
-    seg.setDistanceThreshold(0.005);
+    seg.setDistanceThreshold(0.001);
     seg.setMaxIterations(10000);
     seg.segment(*inliers, *coefficients);
 
@@ -131,7 +133,7 @@ int OilAccurateDetect::poseDetect()
         pcl::ModelCoefficients coefficients_circle;
         seg_circle.setInputCloud(not_plane_cloud_);
         // seg_circle.setIndices(inliers);
-        seg_circle.setOptimizeCoefficients(true);
+        seg_circle.setOptimizeCoefficients(false);
         seg_circle.setModelType(pcl::SACMODEL_CIRCLE3D);
         seg_circle.setAxis({coefficients->values[0], coefficients->values[1],
                             coefficients->values[2]});
@@ -176,4 +178,31 @@ std::vector<int> OilAccurateDetect::extractAbovePlane(PCLPointCloud::Ptr cloud, 
     }
 
     return idx;
+}
+
+std::vector<float> OilAccurateDetect::correctionNormalDirection(PCLPointCloud::Ptr cloud, float A, float B, float C, float D)
+{
+    std::vector<int> positive_idx;
+    std::vector<int> negative_idx;
+
+    auto down = std::sqrt(std::pow(A, 2) + std::pow(B, 2) + std::pow(C, 2));
+
+    for (int i = 0; i < cloud->size(); i++)
+    {
+        auto point = cloud->at(i);
+        // 计算距离
+        auto dis = A * point.x + B * point.y + C * point.z + D / down;
+        float min_dis = 0.01;
+        if (dis >= min_dis)
+            positive_idx.push_back(i);
+        else if (dis <= -min_dis)
+            negative_idx.push_back(i);
+    }
+    cout << positive_idx.size() << ", " << negative_idx.size() << endl;
+    if (positive_idx.size() > negative_idx.size())
+    {
+        // 反向法线
+        return std::vector<float>{-A, -B, -C};
+    }
+    return std::vector<float>{A, B, C};
 }

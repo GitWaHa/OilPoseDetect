@@ -37,7 +37,8 @@ if __name__ == "__main__":
     # move_group.set_goal_joint_tolerance(0.1)
     move_group.set_goal_tolerance(0.0001)
 
-    oil_server = OilPoseReconstructServer()
+    oil_server = OilPoseReconstructServer(
+        "/detect_oil_with_reconstruct/get_pose")
     oil = OilApp(oil_server, "reconstruct")
 
     # 回到home
@@ -57,6 +58,10 @@ if __name__ == "__main__":
         sys.exit()
     print("[findOilHole] pose_oil", pose_oil)
 
+    # 微调
+    pose_oil = oil.translationPoseFromEnd(pose_oil, OilApp.X, 0.002)
+    pose_oil = oil.translationPoseFromEnd(pose_oil, OilApp.Y, -0.001)
+
     # 沿着加油口坐标系 后退一定距离作为加油起始点
     pose_out = oil.translationPoseFromEnd(pose_oil, OilApp.Z, -0.30)
     print("[transformPoseFromEnd] pose_out", pose_out)
@@ -71,6 +76,7 @@ if __name__ == "__main__":
         sys.exit()
 
     max_plan = 10
+    move_group.set_max_velocity_scaling_factor(0.2)
     ## 笛卡尔路径规划，加油动作
     for i in range(max_plan):
         (plan, fraction) = oil.oilCartesianPath(move_group,
@@ -81,8 +87,8 @@ if __name__ == "__main__":
         if (fraction >= 0.95):
             traj_len = len(plan.joint_trajectory.points)
             print("traj_len in", traj_len)
-            for data in plan.joint_trajectory.points:
-                print(data.positions)
+            # for data in plan.joint_trajectory.points:
+            #     print(data.positions)
             # print("compute_cartesian_path fraction:", fraction)
             plan = oil.scale_trajectory_speed(plan, 0.3)
             move_group.execute(plan)
@@ -92,7 +98,7 @@ if __name__ == "__main__":
             if i == (max_plan - 1):
                 sys, exit()
 
-    rospy.sleep(5)
+    rospy.sleep(10)
 
     ## 笛卡尔路径规划，退出加油动作
     for i in range(max_plan):
@@ -103,9 +109,9 @@ if __name__ == "__main__":
 
         if (fraction >= 0.95):
             traj_len = len(plan.joint_trajectory.points)
-            print("traj_len out", traj_len)
-            for data in plan.joint_trajectory.points:
-                print(data.positions)
+            # print("traj_len out", traj_len)
+            # for data in plan.joint_trajectory.points:
+            #     print(data.positions)
             plan = oil.scale_trajectory_speed(plan, 0.3)
             move_group.execute(plan)
             break

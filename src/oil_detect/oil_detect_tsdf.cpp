@@ -195,10 +195,11 @@ int OilDetectTsdf::multiViewDataCollect(float *oil_position, std::string output_
     if (is_ok == false)
         return -1;
 
+    ros::Duration(2).sleep();
+
     // 较慢速度三维重建
     move_group_.setMaxVelocityScalingFactor(0.1);
     topic_capture_->start();
-    ros::Duration(1).sleep();
     for (std::string name : name_targets_)
     {
         move_group_.setNamedTarget(name);
@@ -210,8 +211,8 @@ int OilDetectTsdf::multiViewDataCollect(float *oil_position, std::string output_
             return -1;
         }
     }
-    ros::Duration(1).sleep();
     topic_capture_->stop();
+    // ros::Duration(1).sleep();
 
     return topic_capture_->getFrameNums();
 }
