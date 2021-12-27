@@ -9,7 +9,7 @@ int main(int argc, char **argv)
     spinner.start();
 
     // TopicsCapture topic_capture("/camera/aligned_depth_to_color/image_raw", "/camera/pose", "/home/waha/Desktop/test/reconstruct_data");
-    TopicsCapture topic_capture("/camera/depth/image_align", "/camera/pose", "/home/waha/Desktop/test/reconstruct_data");
+    TopicsCapture topic_capture("/camera/depth/image_align", "/camera/rgb/image_rect_color", "/camera/pose", "/home/waha/Desktop/test/reconstruct_data");
     topic_capture.start();
 
     ros::Rate loop(1);

@@ -69,11 +69,12 @@ int OilDetectTsdf::run()
     float rough_pos[3] = {init_target_x_, init_target_y_, init_target_z_};
 
     int count = 0;
-    while (is_ok != 0 && count++ < 10)
+    while (is_ok != 0 && count++ < 100)
     {
         is_ok = oil_rough_detecter_.detect_once(img_receiver_->getColor(),
                                                 img_receiver_->getDepth(),
                                                 img_receiver_->getCloud(), rough_pos);
+        ros::Duration(1).sleep();
     }
     if (is_ok != 0)
     {
@@ -123,7 +124,10 @@ int OilDetectTsdf::run()
     tf::Matrix3x3 rota(quat);
     double roll, pitch, yaw;
     rota.getRPY(roll, pitch, yaw);
-    std::cout << "[OilDetectTsdf] eula angle: " << roll / M_PI * 180 << "," << pitch / M_PI * 180 << "," << yaw / M_PI * 180 << std::endl;
+    std::cout << "[OilDetectTsdf] rota: "
+              << rota.getColumn(0).getX() << "," << rota.getColumn(0).getY() << "," << rota.getColumn(0).getZ() << endl
+              << rota.getColumn(1).getX() << "," << rota.getColumn(1).getY() << "," << rota.getColumn(1).getZ() << endl
+              << rota.getColumn(2).getX() << "," << rota.getColumn(2).getY() << "," << rota.getColumn(2).getZ() << endl;
     std::cout << "[OilDetectTsdf] oil_pos_: " << oil_pos_[0] << "," << oil_pos_[1] << "," << oil_pos_[2] << std::endl;
 
     std::cout << "[INFO] Exit oil filter detector...\n";
@@ -198,7 +202,7 @@ int OilDetectTsdf::multiViewDataCollect(float *oil_position, std::string output_
     ros::Duration(2).sleep();
 
     // 较慢速度三维重建
-    move_group_.setMaxVelocityScalingFactor(0.1);
+    move_group_.setMaxVelocityScalingFactor(0.05);
     topic_capture_->start();
     for (std::string name : name_targets_)
     {

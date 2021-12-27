@@ -46,13 +46,12 @@ if __name__ == "__main__":
     #     rospy.logerr("home is go filed")
     #     sys.exit()
     # move_group.clear_pose_targets()
-    rospy.sleep(2)
+    # rospy.sleep(2)
 
-    names = ["oil_look_pcd2"]
+    names = ["look_mid"]
     for name in names:
         # 设置为寻找二维码时的关节
         move_group.set_named_target(name)
-        # move_group.set_named_target("oil_look_pcd_left")
         if (not move_group.go()):
             rospy.logerr("oil_look_pcd is go filed")
             sys.exit()
@@ -66,32 +65,47 @@ if __name__ == "__main__":
             sys.exit()
         print("[findOilHole] pose_oil", pose_oil)
 
-        # # 沿着加油口坐标系 后退一定距离作为加油起始点
-        # pose_look = oil.translationPoseFromEnd(pose_oil, OilApp.Z, -0.5)
+        # 沿着加油口坐标系 后退一定距离作为加油起始点
+        pose_look = oil.translationPoseFromEnd(pose_oil, OilApp.Z, -0.50)
         # pose_look = oil.translationPoseFromEnd(pose_look, OilApp.X, -0.05)
         # pose_look = oil.translationPoseFromEnd(pose_look, OilApp.Y, 0.05)
-        # print("[transformPoseFromEnd] pose_look", pose_look)
+        pose_look = oil.rotationFrameAxis(pose_look, OilApp.X,
+                                          -20 * math.pi / 180)
+        print("[transformPoseFromEnd] pose_look", pose_look)
 
         # # move_group.set_pose_target(pose_out)
-        # traj, traj_len, better_pose_goal = oil.find_better_traj(
-        #     move_group, pose_look)
-        # if traj_len != 0:
-        #     move_group.execute(traj, wait=True)
-        # else:
-        #     print(" \033[1;31m pose_out move_group.go() is failed \033[0m")
-        #     sys.exit()
+        traj, traj_len, better_pose_goal = oil.find_better_traj(
+            move_group, pose_look)
+        if traj_len != 0:
+            move_group.execute(traj, wait=True)
+        else:
+            print(" \033[1;31m pose_out move_group.go() is failed \033[0m")
+            sys.exit()
 
-        # rospy.sleep(5)
+        rospy.sleep(5)
+
+        while (not rospy.is_shutdown()):
+            rospy.sleep(2)
+            is_find, pose_oil = oil.findOilHole()
+            # print(pose_oil, "\n")
 
         # sys.exit()
+
+        # 精定位 point cloud 识别加油口
+        is_find, pose_oil = oil.findOilHole()
+        if (not is_find):
+            print(" \033[1;31m ArTag is not find \033[0m")
+            sys.exit()
+        print("[findOilHole] pose_oil", pose_oil)
 
         # 沿着加油口坐标系 后退一定距离作为加油起始点
         pose_out = oil.translationPoseFromEnd(pose_oil, OilApp.Z, -0.30)
         print("[transformPoseFromEnd] pose_out", pose_out)
 
         # move_group.set_pose_target(pose_out)
-        traj, traj_len, better_pose_goal = oil.find_better_traj(
-            move_group, pose_out)
+        traj, traj_len, better_pose_goal = oil.find_better_traj(move_group,
+                                                                pose_out,
+                                                                debug=False)
         if traj_len != 0:
             move_group.execute(traj, wait=True)
         else:
@@ -103,7 +117,7 @@ if __name__ == "__main__":
         for i in range(max_plan):
             (plan, fraction) = oil.oilCartesianPath(move_group,
                                                     direction=OilApp.Z,
-                                                    distance_in=0.11)
+                                                    distance_in=0.06)
             print("compute_cartesian_path fraction:", fraction)
 
             if (fraction >= 0.95):
@@ -126,7 +140,7 @@ if __name__ == "__main__":
         for i in range(max_plan):
             (plan, fraction) = oil.oilCartesianPath(move_group,
                                                     direction=OilApp.Z,
-                                                    distance_in=-0.11)
+                                                    distance_in=-0.06)
             print("compute_cartesian_path fraction:", fraction)
 
             if (fraction >= 0.95):

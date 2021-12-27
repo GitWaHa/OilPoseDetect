@@ -68,7 +68,6 @@ if __name__ == "__main__":
         # 沿着加油口坐标系 后退一定距离作为加油起始点
         pose_look = oil.translationPoseFromEnd(pose_oil, OilApp.Z, -0.40)
         pose_look = oil.translationPoseFromEnd(pose_look, OilApp.Y, 0.05)
-        # 旋转z轴
         pose_look = oil.rotationFrameAxis(pose_look, OilApp.X,
                                           -10 * math.pi / 180)
         print("[transformPoseFromEnd] pose_look", pose_look)

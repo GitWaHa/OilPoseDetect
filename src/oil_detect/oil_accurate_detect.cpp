@@ -29,6 +29,12 @@ int OilAccurateDetect::detect_once(const PCLPointCloud::Ptr cloud)
 
 void OilAccurateDetect::saveDataFrame(const std::string save_folder, const std::string save_num)
 {
+    if (!boost::filesystem::exists(save_folder))
+    {
+        std::cout << "[main] mkdir :" << save_folder << endl;
+        boost::filesystem::create_directories(save_folder);
+    }
+
     std::string cloud_path = save_folder + "/frame_" + save_num + "_reconstruct_cloud" + ".pcd";
     pcl::io::savePCDFile(cloud_path, *cloud_);
 

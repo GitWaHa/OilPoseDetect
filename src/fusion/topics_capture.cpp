@@ -1,6 +1,7 @@
 #include "fusion/topics_capture.h"
 #include <ostream>
 #include <fstream>
+#include <boost/filesystem.hpp>
 
 #include <opencv2/opencv.hpp>
 #include <cv_bridge/cv_bridge.h>
@@ -29,24 +30,34 @@ void saveCameraPose(const TopicsCapture::CameraPoseMsg camera_pose, std::string 
     }
 }
 
-TopicsCapture::TopicsCapture(const std::string depth_img_topic_name, const std::string camera_pose_topic_name, const std::string save_folder)
+TopicsCapture::TopicsCapture(const std::string depth_img_topic_name, const std::string color_img_topic_name,
+                             const std::string camera_pose_topic_name, const std::string save_folder)
     : depth_name_(depth_img_topic_name), pose_name_(camera_pose_topic_name), save_folder_(save_folder)
 {
+    if (!boost::filesystem::exists(save_folder_))
+    {
+        ROS_INFO_STREAM("[main] mkdir :" << save_folder_);
+        boost::filesystem::create_directories(save_folder_);
+    }
+
     frame_nums_ = 0;
 
     camera_pose_sub_ = new message_filters::Subscriber<CameraPoseMsg>(nh_, pose_name_, 1);
     depth_img_sub_ = new message_filters::Subscriber<DepthImageMsg>(nh_, depth_name_, 1);
+    color_img_sub_ = new message_filters::Subscriber<ColorImageMsg>(nh_, color_img_topic_name, 1);
 
     stop();
 
-    sync_ = new message_filters::Synchronizer<SyncPolicy>(SyncPolicy(100), *camera_pose_sub_, *depth_img_sub_);
-    sync_->registerCallback(boost::bind(&TopicsCapture::subCallBack, this, _1, _2));
+    sync_ = new message_filters::Synchronizer<SyncPolicy>(SyncPolicy(100), *camera_pose_sub_, *depth_img_sub_, *color_img_sub_);
+    sync_->registerCallback(boost::bind(&TopicsCapture::subCallBack, this, _1, _2, _3));
 }
 TopicsCapture::~TopicsCapture()
 {
 }
 
-void TopicsCapture::subCallBack(const CameraPoseMsg::ConstPtr &camera_pose, const DepthImageMsg::ConstPtr &depth_img)
+void TopicsCapture::subCallBack(const CameraPoseMsg::ConstPtr &camera_pose,
+                                const DepthImageMsg::ConstPtr &depth_img,
+                                const ColorImageMsg::ConstPtr &color_img)
 {
     //TODO: 保存信息
     std::stringstream oss;
@@ -60,6 +71,12 @@ void TopicsCapture::subCallBack(const CameraPoseMsg::ConstPtr &camera_pose, cons
     cv_bridge::CvImageConstPtr pCvImage;
     pCvImage = cv_bridge::toCvShare(depth_img, depth_img->encoding);
     cv::imwrite(depth_path, pCvImage->image);
+
+    std::string color_path = save_folder_ + "/frame_" + oss.str() + "_color" + ".png";
+    pCvImage = cv_bridge::toCvShare(color_img, color_img->encoding);
+    cv::Mat image;
+    cv::cvtColor(pCvImage->image, image, cv::COLOR_BGR2RGB);
+    cv::imwrite(color_path, image);
 
     std::cout << "[OilDetectTsdf] save frame " << oss.str() << " data to " << save_folder_ << std::endl;
 }

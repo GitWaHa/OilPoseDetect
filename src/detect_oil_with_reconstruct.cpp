@@ -83,6 +83,24 @@ bool DetectOilWithReconstructServer::serverCallBack(oil_pose_detector::OilPoseDe
     return true;
 }
 
+bool checkFiles(string data_folder, std::vector<std::string> camera_files)
+{
+    if (!boost::filesystem::exists(data_folder))
+    {
+        ROS_INFO_STREAM("[main] mkdir :" << data_folder);
+        boost::filesystem::create_directories(data_folder);
+        return false;
+    }
+
+    for (auto name : camera_files)
+    {
+        if (!boost::filesystem::exists(data_folder + "/" + name))
+            return false;
+    }
+
+    return true;
+}
+
 void DetectOilWithReconstructServer::init()
 {
     // 参数解析
@@ -102,6 +120,26 @@ void DetectOilWithReconstructServer::init()
     nh_.param("useExact", useExact, false);
     nh_.param("useCompressed", useCompressed, false);
 
+    std::string data_folder = "/home/waha/Desktop/oil_reconstruct_data";
+    std::vector<string> camera_params_files = {"adjust_hand_eye.txt", "camera-intrinsics.txt"};
+    if (!checkFiles(data_folder, camera_params_files))
+    {
+        ROS_ERROR_STREAM("[main] checkFiles failed!!!");
+        return;
+    }
+
+    // 按时间创建文件夹
+    time_t t = time(0);
+    char time[32];
+    strftime(time, sizeof(time), "%Y-%m-%d-%H-%M-%S", localtime(&t));
+    string data_time_folder = data_folder + "/" + string(time);
+    boost::filesystem::create_directories(data_time_folder);
+    for (auto name : camera_params_files)
+    {
+        ROS_INFO_STREAM("[main] copy file " << data_folder + "/" + name << " to " << data_time_folder + "/" + name);
+        boost::filesystem::copy_file(data_folder + "/" + name, data_time_folder + "/" + name);
+    }
+
     /// Realsense cloud and image receiver
     std::shared_ptr<CameraReceiver> camera_receiver;
     if (camera == "tuyang")
@@ -110,9 +148,8 @@ void DetectOilWithReconstructServer::init()
         camera_receiver = std::make_shared<CameraReceiver>(nh_, topicColor, topicDepth, useExact, useCompressed, 30);
 
     // tsdf相关话题的捕获，保存到某个文件夹下，方便tsdf调用
-    std::string data_folder = "/home/waha/Desktop/test_data";
-    auto topic_receiver = std::make_shared<TopicsCapture>(topicDepth, "/camera/pose", data_folder + "/reconstruct_data");
-    oil_detecter = std::make_unique<OilDetectTsdf>(camera_receiver, topic_receiver, oil_frame_reference, data_folder);
+    auto topic_receiver = std::make_shared<TopicsCapture>(topicDepth, topicColor, "/camera/pose", data_time_folder + "/reconstruct_data");
+    oil_detecter = std::make_unique<OilDetectTsdf>(camera_receiver, topic_receiver, oil_frame_reference, data_time_folder);
 
     if (show)
         oil_detecter->show(15);

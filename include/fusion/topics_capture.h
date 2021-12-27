@@ -16,15 +16,17 @@ class TopicsCapture
 public:
     using CameraPoseMsg = geometry_msgs::PoseStamped;
     // using CameraPoseMsg = sensor_msgs::Image;
+    using ColorImageMsg = sensor_msgs::Image;
     using DepthImageMsg = sensor_msgs::Image;
-    using SyncPolicy = message_filters::sync_policies::ApproximateTime<CameraPoseMsg, DepthImageMsg>;
+    using SyncPolicy = message_filters::sync_policies::ApproximateTime<CameraPoseMsg, DepthImageMsg, ColorImageMsg>;
     // using SyncPolicy = message_filters::sync_policies::ExactTime<CameraPoseMsg, DepthImageMsg>;
 
 public:
-    TopicsCapture(const std::string depth_img_topic_name, const std::string camera_pose_topic_name, const std::string save_folder);
+    TopicsCapture(const std::string depth_img_topic_name, const std::string color_img_topic_name,
+                  const std::string camera_pose_topic_name, const std::string save_folder);
     ~TopicsCapture();
 
-    void subCallBack(const CameraPoseMsg::ConstPtr &camera_pose, const DepthImageMsg::ConstPtr &depth_img);
+    void subCallBack(const CameraPoseMsg::ConstPtr &camera_pose, const DepthImageMsg::ConstPtr &depth_img, const ColorImageMsg::ConstPtr &color_img);
 
     void start()
     {
@@ -54,6 +56,7 @@ private:
     ros::NodeHandle nh_;
 
     message_filters::Subscriber<DepthImageMsg> *depth_img_sub_;
+    message_filters::Subscriber<ColorImageMsg> *color_img_sub_;
     message_filters::Subscriber<CameraPoseMsg> *camera_pose_sub_;
     message_filters::Synchronizer<SyncPolicy> *sync_;
 

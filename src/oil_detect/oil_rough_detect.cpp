@@ -43,6 +43,12 @@ int OilRoughDetect::detect_once(const cv::Mat &color, const cv::Mat &depth, cons
 
 void OilRoughDetect::saveDataFrame(const std::string save_folder, const std::string save_num)
 {
+    if (!boost::filesystem::exists(save_folder))
+    {
+        ROS_INFO_STREAM("[main] mkdir :" << save_folder);
+        boost::filesystem::create_directories(save_folder);
+    }
+
     cout << "[info] start save data ....." << endl;
     std::string pos_path = save_folder + "/frame_" + save_num + "_oil_pos" + ".txt";
     ofstream pose_f(pos_path);
