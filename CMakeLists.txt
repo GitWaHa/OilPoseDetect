@@ -116,6 +116,14 @@ target_link_libraries (test_accurate_detect
 ${PCL_LIBRARIES}
 ${catkin_LIBRARIES})
 
+add_executable (test_pointcloud src/test_pointcloud.cpp
+  src/oil_detect/oil_accurate_detect.cpp
+  src/fusion/utils.cpp
+)
+target_link_libraries (test_pointcloud
+${PCL_LIBRARIES}
+${catkin_LIBRARIES})
+
 # 
 add_library(tsdf_fusion src/fusion/tsdf_fusion.cpp)
 

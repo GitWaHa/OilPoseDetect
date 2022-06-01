@@ -65,6 +65,8 @@ if __name__ == "__main__":
             sys.exit()
         print("[findOilHole] pose_oil", pose_oil)
 
+        # sys.exit()
+
         # 沿着加油口坐标系 后退一定距离作为加油起始点
         pose_look = oil.translationPoseFromEnd(pose_oil, OilApp.Z, -0.50)
         # pose_look = oil.translationPoseFromEnd(pose_look, OilApp.X, -0.05)
@@ -84,10 +86,10 @@ if __name__ == "__main__":
 
         rospy.sleep(5)
 
-        while (not rospy.is_shutdown()):
-            rospy.sleep(2)
-            is_find, pose_oil = oil.findOilHole()
-            # print(pose_oil, "\n")
+        # while (not rospy.is_shutdown()):
+        #     rospy.sleep(2)
+        #     is_find, pose_oil = oil.findOilHole()
+        #     # print(pose_oil, "\n")
 
         # sys.exit()
 
@@ -117,7 +119,7 @@ if __name__ == "__main__":
         for i in range(max_plan):
             (plan, fraction) = oil.oilCartesianPath(move_group,
                                                     direction=OilApp.Z,
-                                                    distance_in=0.06)
+                                                    distance_in=0.1)
             print("compute_cartesian_path fraction:", fraction)
 
             if (fraction >= 0.95):
@@ -134,13 +136,13 @@ if __name__ == "__main__":
                 if i == (max_plan - 1):
                     sys, exit()
 
-        rospy.sleep(5)
+        rospy.sleep(10)
 
         ## 笛卡尔路径规划，退出加油动作
         for i in range(max_plan):
             (plan, fraction) = oil.oilCartesianPath(move_group,
                                                     direction=OilApp.Z,
-                                                    distance_in=-0.06)
+                                                    distance_in=-0.1)
             print("compute_cartesian_path fraction:", fraction)
 
             if (fraction >= 0.95):

@@ -52,18 +52,24 @@ class OilApp(object):
         pose_ar_tag.pose.orientation.w = orientation[3]
 
         # # # 测试使用
-        # is_find = True
-        # orientation = tf_trans.quaternion_from_euler(-55 * math.pi / 180.,
-        #                                              0 * math.pi / 180.,
-        #                                              25 * math.pi / 180.)
-        # pose_ar_tag.pose.position.x = -0.119
-        # pose_ar_tag.pose.position.y = 0.4
-        # pose_ar_tag.pose.position.z = 1.16
+        #       position:
+        #     x: -0.0225854032456
+        #     y: 0.397178437781
+        #     z: 1.16692480216
+        # orientation:
+        #     x: 0.457271815237
+        #     y: 0.00695638337351
+        #     z: -0.0385852559266
+        #     w: -0.888462308568
+        is_find = True
+        pose_ar_tag.pose.position.x = -0.02624163531422455
+        pose_ar_tag.pose.position.y = 0.42376444923208506
+        pose_ar_tag.pose.position.z = 1.180509593819837
 
-        # pose_ar_tag.pose.orientation.x = orientation[0]
-        # pose_ar_tag.pose.orientation.y = orientation[1]
-        # pose_ar_tag.pose.orientation.z = orientation[2]
-        # pose_ar_tag.pose.orientation.w = orientation[3]
+        pose_ar_tag.pose.orientation.x = 0.457271815237
+        pose_ar_tag.pose.orientation.y = 0.00695638337351
+        pose_ar_tag.pose.orientation.z = -0.0385852559266
+        pose_ar_tag.pose.orientation.w = -0.888462308568
 
         pose_ar_tag.header.frame_id = "base_link"
 
